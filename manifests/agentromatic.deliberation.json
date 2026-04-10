@@ -1,0 +1,144 @@
+{
+  "$schema": "https://opensentience.org/schemas/pulse-loop-manifest.v0.1.json",
+  "pulse_protocol_version": "0.1",
+
+  "loop_id": "agentromatic.deliberation",
+  "loop_name": "AgenTroMatic Deliberation Loop",
+  "version": "0.2.0",
+  "owner": "agentromatic.com",
+  "workspace_scope": "required",
+
+  "description": "Seven-phase deliberation orchestrator: capability bidding, overlap detection, structured negotiation, leader election, execution under quorum, commit, and reputation learning. Implements OS-003 (deliberation) with a Raft fast-path and PBFT-style conflict path.",
+
+  "phases": [
+    {
+      "id": "bid",
+      "kind": "custom",
+      "custom_kind": "bid",
+      "description": "Capability-based bidding from agent registry.",
+      "inputs":  { "from": "external", "schema": "Task" },
+      "outputs": { "to": "phase:overlap", "schema": "BidSet" },
+      "idempotent": true
+    },
+    {
+      "id": "overlap",
+      "kind": "custom",
+      "custom_kind": "overlap",
+      "description": "Detect overlapping bids that require deliberation.",
+      "inputs":  { "from": "phase:bid", "schema": "BidSet" },
+      "outputs": { "to": "phase:negotiate", "schema": "OverlapMatrix" },
+      "idempotent": true
+    },
+    {
+      "id": "negotiate",
+      "kind": "custom",
+      "custom_kind": "negotiate",
+      "description": "Structured argumentation across overlapping bidders.",
+      "inputs":  { "from": "phase:overlap", "schema": "OverlapMatrix" },
+      "outputs": { "to": "phase:elect", "schema": "PositionSet" },
+      "idempotent": false
+    },
+    {
+      "id": "elect",
+      "kind": "custom",
+      "custom_kind": "elect",
+      "description": "Ra (Raft) consensus to elect a leader; conflict-path uses PBFT.",
+      "inputs":  { "from": "phase:negotiate", "schema": "PositionSet" },
+      "outputs": { "to": "phase:execute", "schema": "DeliberationResult" },
+      "idempotent": false,
+      "invariant": "quorum_before_commit"
+    },
+    {
+      "id": "execute",
+      "kind": "act",
+      "description": "Elected leader executes the task under quorum validation.",
+      "inputs":  { "from": "phase:elect", "schema": "DeliberationResult" },
+      "outputs": { "to": "phase:commit", "schema": "ExecutionTrace" },
+      "idempotent": false,
+      "policy_check": "delegatic.check_policy"
+    },
+    {
+      "id": "commit",
+      "kind": "act",
+      "description": "Commit the outcome envelope to the shared graph.",
+      "inputs":  { "from": "phase:execute", "schema": "ExecutionTrace" },
+      "outputs": { "to": "substrate:memory", "schema": "Mutation" },
+      "idempotent": false,
+      "audit_event": "task.committed"
+    },
+    {
+      "id": "learn_rep",
+      "kind": "learn",
+      "description": "Update reputation across participants from outcome.",
+      "inputs":  { "from": "phase:commit|signal:OutcomeSignal", "schema": "OutcomeSignal" },
+      "outputs": { "to": "substrate:memory|signal:ReputationUpdate", "schema": "ReputationUpdate" },
+      "idempotent": true,
+      "invariant": "feedback_immutability"
+    }
+  ],
+
+  "closure": {
+    "from_phase": "learn_rep",
+    "to_phase":   "bid",
+    "via":        "substrate:memory",
+    "guarantee":  "eventual"
+  },
+
+  "cadence": {
+    "type":   "event",
+    "params": { "trigger": "task_arrival" }
+  },
+
+  "nesting": {
+    "parent_loop": null,
+    "inner_loops": []
+  },
+
+  "substrates": {
+    "memory":    "graphonomous://workspace/{ws_id}",
+    "policy":    "delegatic://workspace/{ws_id}",
+    "audit":     "delegatic://workspace/{ws_id}/audit",
+    "auth":      "open_sentience://workspace/{ws_id}",
+    "transport": "a2a",
+    "time":      null
+  },
+
+  "invariants": {
+    "phase_atomicity":       true,
+    "feedback_immutability": true,
+    "append_only_audit":     true,
+    "kappa_routing":         false,
+    "quorum_before_commit":  true,
+    "outcome_grounding":     true,
+    "trace_id_propagation":  true
+  },
+
+  "connections": [
+    {
+      "id": "rep_to_fleetprompt",
+      "emit_phase":     "learn_rep",
+      "envelope":       "cloudevents.v1",
+      "token":          "ReputationUpdate",
+      "to_loop":        "fleetprompt.trust",
+      "to_phase":       "trust_recompute",
+      "cadence":        "async",
+      "delivery":       "at_least_once"
+    },
+    {
+      "id": "outcome_to_prism",
+      "emit_phase":     "commit",
+      "envelope":       "cloudevents.v1",
+      "token":          "OutcomeSignal",
+      "to_loop":        "prism.benchmark",
+      "to_phase":       "observe",
+      "cadence":        "async",
+      "delivery":       "at_least_once"
+    }
+  ],
+
+  "telemetry": {
+    "namespace": "agentromatic",
+    "phase_metrics": ["duration_ms", "bid_count", "consensus_path", "status"],
+    "loop_metrics": ["task_throughput", "deliberation_depth", "reputation_drift"]
+  }
+}

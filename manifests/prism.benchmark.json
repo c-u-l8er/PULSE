@@ -1,0 +1,123 @@
+{
+  "$schema": "https://opensentience.org/schemas/pulse-loop-manifest.v0.1.json",
+  "pulse_protocol_version": "0.1",
+
+  "loop_id": "prism.benchmark",
+  "loop_name": "PRISM Benchmark Cycle",
+  "version": "3.0.0",
+  "owner": "opensentience.org",
+  "workspace_scope": "optional",
+
+  "description": "Self-improving continual learning benchmark cycle. Composes scenarios from git anchors, runs them against registered systems, judges transcripts in three layers, reflects on gaps, and diagnoses failures with actionable fixes.",
+
+  "phases": [
+    {
+      "id": "compose",
+      "kind": "custom",
+      "custom_kind": "compose",
+      "description": "Build scenarios from git-grounded anchors and CL gap analysis.",
+      "inputs":  { "from": "external|signal:GapAnalysis", "schema": "ComposeRequest" },
+      "outputs": { "to": "phase:interact", "schema": "ScenarioBatch" },
+      "idempotent": true
+    },
+    {
+      "id": "interact",
+      "kind": "custom",
+      "custom_kind": "interact",
+      "description": "Run scenarios against registered memory systems via MCP.",
+      "inputs":  { "from": "phase:compose", "schema": "ScenarioBatch" },
+      "outputs": { "to": "phase:observe", "schema": "Transcript[]" },
+      "idempotent": false,
+      "audit_event": "transcript.generated"
+    },
+    {
+      "id": "observe",
+      "kind": "custom",
+      "custom_kind": "observe",
+      "description": "Three-layer judging: transcripts -> dimension judges -> meta-judges.",
+      "inputs":  { "from": "phase:interact|signal:OutcomeSignal", "schema": "Transcript[]" },
+      "outputs": { "to": "phase:reflect", "schema": "Judgment[]" },
+      "idempotent": true
+    },
+    {
+      "id": "reflect",
+      "kind": "custom",
+      "custom_kind": "reflect",
+      "description": "Gap analysis, IRT recalibration, scenario evolution.",
+      "inputs":  { "from": "phase:observe", "schema": "Judgment[]" },
+      "outputs": { "to": "phase:diagnose", "schema": "GapAnalysis" },
+      "idempotent": true
+    },
+    {
+      "id": "diagnose",
+      "kind": "custom",
+      "custom_kind": "diagnose",
+      "description": "Failure pattern detection, fix suggestions, leaderboard updates.",
+      "inputs":  { "from": "phase:reflect", "schema": "GapAnalysis" },
+      "outputs": { "to": "external", "schema": "DiagnosticReport" },
+      "idempotent": true
+    }
+  ],
+
+  "closure": {
+    "from_phase": "diagnose",
+    "to_phase":   "compose",
+    "via":        "substrate:memory",
+    "guarantee":  "next_tick"
+  },
+
+  "cadence": {
+    "type":   "periodic",
+    "params": { "interval": "weekly" },
+    "fallback": { "type": "manual", "params": { "interface": "mcp:prism_benchmark" } }
+  },
+
+  "nesting": {
+    "parent_loop": null,
+    "inner_loops": [
+      {
+        "loop_id": "graphonomous.continual_learning",
+        "trigger": "phase:interact when registered_system == 'graphonomous'",
+        "wait":    "until_stable"
+      }
+    ]
+  },
+
+  "substrates": {
+    "memory":    "graphonomous://prism/scenarios",
+    "policy":    "delegatic://opensentience/prism",
+    "audit":     "delegatic://opensentience/prism/audit",
+    "auth":      "open_sentience://opensentience/prism",
+    "transport": "mcp",
+    "time":      null
+  },
+
+  "invariants": {
+    "phase_atomicity":       true,
+    "feedback_immutability": true,
+    "append_only_audit":     true,
+    "kappa_routing":         false,
+    "quorum_before_commit":  false,
+    "outcome_grounding":     true,
+    "trace_id_propagation":  true
+  },
+
+  "connections": [
+    {
+      "id": "diagnostic_to_systems",
+      "emit_phase":     "diagnose",
+      "envelope":       "cloudevents.v1",
+      "token":          "ReputationUpdate",
+      "to_loop":        "fleetprompt.trust",
+      "to_phase":       "trust_recompute",
+      "cadence":        "async",
+      "delivery":       "at_least_once"
+    }
+  ],
+
+  "telemetry": {
+    "namespace": "prism",
+    "phase_metrics": ["duration_ms", "scenario_count", "judgment_count", "status"],
+    "loop_metrics": ["cycle_id", "loop_closure_rate", "irt_calibration_drift"]
+  }
+}

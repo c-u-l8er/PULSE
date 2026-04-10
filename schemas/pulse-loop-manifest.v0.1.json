@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opensentience.org/schemas/pulse-loop-manifest.v0.1.json",
+  "title": "PULSE Loop Manifest",
+  "description": "Schema for OS-010 PULSE Protocol for Uniform Loop State Exchange v0.1",
+  "type": "object",
+  "required": [
+    "pulse_protocol_version",
+    "loop_id",
+    "version",
+    "phases",
+    "closure",
+    "cadence",
+    "substrates",
+    "invariants"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string", "format": "uri" },
+    "pulse_protocol_version": {
+      "type": "string",
+      "pattern": "^0\\.1(\\.[0-9]+)?$",
+      "description": "Manifest schema version. Runtimes must reject higher minor versions."
+    },
+    "loop_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)+$",
+      "description": "Globally unique loop identifier in dot notation, e.g. graphonomous.continual_learning"
+    },
+    "loop_name": { "type": "string" },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "SemVer of the loop instance (independent of pulse_protocol_version)"
+    },
+    "owner": { "type": "string" },
+    "workspace_scope": {
+      "type": "string",
+      "enum": ["required", "optional", "global"]
+    },
+    "description": { "type": "string" },
+
+    "phases": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/phase" },
+      "description": "Ordered list of phases. Must include at least one retrieve and one act."
+    },
+
+    "closure": { "$ref": "#/$defs/closure" },
+    "cadence": { "$ref": "#/$defs/cadence" },
+    "nesting": { "$ref": "#/$defs/nesting" },
+    "substrates": { "$ref": "#/$defs/substrates" },
+    "invariants": { "$ref": "#/$defs/invariants" },
+
+    "connections": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/connection" }
+    },
+
+    "telemetry": { "$ref": "#/$defs/telemetry" }
+  },
+
+  "$defs": {
+    "phase": {
+      "type": "object",
+      "required": ["id", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "id":          { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "kind":        {
+          "type": "string",
+          "enum": ["retrieve", "route", "act", "learn", "consolidate", "custom"]
+        },
+        "custom_kind": { "type": "string" },
+        "description": { "type": "string" },
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "from":   { "type": "string" },
+            "schema": { "type": "string" }
+          }
+        },
+        "outputs": {
+          "type": "object",
+          "properties": {
+            "to":     { "type": "string" },
+            "schema": { "type": "string" }
+          }
+        },
+        "idempotent":   { "type": "boolean" },
+        "signature":    { "type": "string" },
+        "timeout_ms":   { "type": "integer", "minimum": 0 },
+        "on_failure":   {
+          "type": "string",
+          "enum": ["retry", "rollback", "escalate", "skip", "abort_loop"]
+        },
+        "max_retries":  { "type": "integer", "minimum": 0 },
+        "policy_check": { "type": "string" },
+        "audit_event":  { "type": "string" },
+        "invariant":    { "type": "string" },
+        "parallel":     { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "custom" } } },
+          "then": { "required": ["custom_kind"] }
+        }
+      ]
+    },
+
+    "closure": {
+      "type": "object",
+      "required": ["from_phase", "to_phase"],
+      "additionalProperties": false,
+      "properties": {
+        "from_phase": { "type": "string" },
+        "to_phase":   { "type": "string" },
+        "via":        { "type": "string" },
+        "guarantee":  {
+          "type": "string",
+          "enum": ["immediate", "next_tick", "eventual"]
+        }
+      }
+    },
+
+    "cadence": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["event", "periodic", "streaming", "idle", "cross_loop_signal", "manual"]
+        },
+        "params":   { "type": "object" },
+        "fallback": { "$ref": "#/$defs/cadence" }
+      }
+    },
+
+    "nesting": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parent_loop": { "type": ["string", "null"] },
+        "inner_loops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["loop_id", "trigger"],
+            "additionalProperties": false,
+            "properties": {
+              "loop_id":   { "type": "string" },
+              "trigger":   { "type": "string" },
+              "wait":      {
+                "type": "string",
+                "enum": ["until_stable", "until_done", "fire_forget", "bounded"]
+              },
+              "timeout_ms": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+
+    "substrates": {
+      "type": "object",
+      "required": ["memory", "policy", "audit", "auth"],
+      "additionalProperties": false,
+      "properties": {
+        "memory":    { "type": ["string", "null"] },
+        "policy":    { "type": ["string", "null"] },
+        "audit":     { "type": ["string", "null"] },
+        "auth":      { "type": ["string", "null"] },
+        "transport": { "type": ["string", "null"] },
+        "time":      { "type": ["string", "null"] }
+      }
+    },
+
+    "invariants": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "phase_atomicity":       { "type": "boolean" },
+        "feedback_immutability": { "type": "boolean" },
+        "append_only_audit":     { "type": "boolean" },
+        "kappa_routing":         { "type": "boolean" },
+        "quorum_before_commit":  { "type": "boolean" },
+        "outcome_grounding":     { "type": "boolean" },
+        "trace_id_propagation":  { "type": "boolean" }
+      }
+    },
+
+    "connection": {
+      "type": "object",
+      "required": ["id", "emit_phase", "token", "to_loop"],
+      "additionalProperties": false,
+      "properties": {
+        "id":             { "type": "string" },
+        "emit_phase":     { "type": "string" },
+        "emit_condition": { "type": "string" },
+        "envelope":       { "type": "string", "enum": ["cloudevents.v1"] },
+        "token": {
+          "type": "string",
+          "enum": [
+            "TopologyContext",
+            "DeliberationResult",
+            "OutcomeSignal",
+            "ReputationUpdate",
+            "ConsolidationEvent"
+          ]
+        },
+        "to_loop":  { "type": "string" },
+        "to_phase": { "type": "string" },
+        "cadence":  { "type": "string", "enum": ["sync", "async"] },
+        "delivery": {
+          "type": "string",
+          "enum": ["at_least_once", "at_most_once", "exactly_once"]
+        },
+        "max_inflight":    { "type": "integer", "minimum": 1 },
+        "overflow_policy": {
+          "type": "string",
+          "enum": ["block", "drop_oldest", "drop_newest", "escalate"]
+        }
+      }
+    },
+
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "namespace":     { "type": "string" },
+        "phase_metrics": { "type": "array", "items": { "type": "string" } },
+        "loop_metrics":  { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
