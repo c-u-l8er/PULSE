@@ -1,0 +1,1706 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>PULSE — Temporal algebra for closed loops</title>
+        <meta
+            name="description"
+            content="OS-010 PULSE is the temporal algebra of the [&] three-protocol stack. Loops declare their phases, cadence, nesting, substrates, invariants, and signal connections in a single manifest — and any conforming loop becomes automatically PRISM-evaluable."
+        />
+        <meta
+            name="keywords"
+            content="OS-010, PULSE, loop manifest, temporal algebra, CloudEvents, retrieve route act learn consolidate, [&] protocol, agent rhythms"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="icon"
+            href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M5 50 Q 25 10 50 50 T 95 50' fill='none' stroke='%2300f5d4' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E"
+        />
+        <style>
+            /* ============================================================
+         PULSE — OS-010 marketing site
+         Theme: oscillation, cadence, deep ocean teal, rhythm.
+         Custom — does not share styles with prism or graphonomous.
+         ============================================================ */
+            :root {
+                --abyss: #04141a;
+                --abyss-2: #07212a;
+                --abyss-3: #0c2c38;
+                --tide: #11475a;
+                --foam: #f1fbf8;
+                --foam-dim: #a4c4c5;
+                --foam-mute: #4d7f85;
+                --rule: rgba(0, 245, 212, 0.1);
+                --rule-soft: rgba(0, 245, 212, 0.04);
+
+                --pulse: #00f5d4;
+                --pulse-2: #00b4d8;
+                --pulse-3: #4cc9f0;
+                --warm: #f9c74f;
+                --hot: #f15bb5;
+
+                --display:
+                    "Space Grotesk", -apple-system, BlinkMacSystemFont,
+                    sans-serif;
+                --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+                --measure: 64ch;
+                --gutter: clamp(1.25rem, 4vw, 3rem);
+                --section-y: clamp(5rem, 10vw, 9rem);
+            }
+
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            html {
+                -webkit-font-smoothing: antialiased;
+                scroll-behavior: smooth;
+                overflow-x: clip;
+            }
+
+            body {
+                background:
+                    radial-gradient(
+                        900px 600px at 10% -5%,
+                        rgba(0, 245, 212, 0.18),
+                        transparent 55%
+                    ),
+                    radial-gradient(
+                        700px 500px at 100% 5%,
+                        rgba(76, 201, 240, 0.12),
+                        transparent 55%
+                    ),
+                    var(--abyss);
+                color: var(--foam);
+                font-family: var(--display);
+                font-size: 16px;
+                line-height: 1.6;
+                min-height: 100vh;
+                overflow-x: hidden;
+                position: relative;
+            }
+            body::before {
+                /* subtle horizontal pulse-line strata across the entire page */
+                content: "";
+                position: fixed;
+                inset: 0;
+                background-image: repeating-linear-gradient(
+                    to bottom,
+                    transparent 0,
+                    transparent 119px,
+                    rgba(0, 245, 212, 0.04) 120px
+                );
+                pointer-events: none;
+                z-index: 0;
+            }
+
+            a {
+                color: var(--foam);
+                text-decoration: none;
+            }
+            ::selection {
+                background: var(--pulse);
+                color: var(--abyss);
+            }
+
+            .pulse-wrap {
+                max-width: 1180px;
+                margin: 0 auto;
+                padding: 0 var(--gutter);
+                position: relative;
+                z-index: 1;
+            }
+
+            /* ---------- topbar ---------- */
+            .topbar {
+                display: flex;
+                align-items: center;
+                gap: 2.5rem;
+                padding: 1.4rem 0 1.2rem;
+                border-bottom: 1px solid var(--rule);
+                position: sticky;
+                top: 0;
+                z-index: 30;
+                background: rgba(4, 20, 26, 0.86);
+                backdrop-filter: blur(12px);
+            }
+            .brand {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.85rem;
+                font-family: var(--display);
+                font-weight: 500;
+                font-size: 1.05rem;
+                letter-spacing: 0.22em;
+            }
+            .brand svg {
+                width: 36px;
+                height: 22px;
+            }
+            .brand .dot {
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: var(--pulse);
+                box-shadow: 0 0 0 0 var(--pulse);
+                animation: pulse 1.6s ease-out infinite;
+            }
+            @keyframes pulse {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(0, 245, 212, 0.6);
+                }
+                70% {
+                    box-shadow: 0 0 0 12px rgba(0, 245, 212, 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(0, 245, 212, 0);
+                }
+            }
+            .nav {
+                display: flex;
+                gap: 1.6rem;
+                margin-left: auto;
+                font-family: var(--mono);
+                font-size: 0.78rem;
+                color: var(--foam-dim);
+                letter-spacing: 0.05em;
+            }
+            .nav a:hover {
+                color: var(--pulse);
+            }
+            .badge {
+                padding: 0.3rem 0.7rem;
+                border: 1px solid var(--pulse);
+                border-radius: 999px;
+                font-family: var(--mono);
+                font-size: 0.7rem;
+                letter-spacing: 0.18em;
+                color: var(--pulse);
+            }
+
+            /* ---------- hero ---------- */
+            .hero {
+                padding: clamp(4.5rem, 10vw, 8rem) 0 clamp(3rem, 6vw, 5rem);
+                position: relative;
+            }
+            .hero__eyebrow {
+                font-family: var(--mono);
+                font-size: 0.78rem;
+                color: var(--foam-mute);
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                display: inline-flex;
+                gap: 0.85rem;
+                align-items: center;
+                margin-bottom: 2rem;
+            }
+            .hero__eyebrow::before {
+                content: "";
+                width: 36px;
+                height: 1px;
+                background: var(--pulse);
+            }
+            .hero__title {
+                font-family: var(--display);
+                font-weight: 300;
+                font-size: clamp(2.6rem, 6.2vw, 5.4rem);
+                line-height: 1.04;
+                letter-spacing: -0.02em;
+                max-width: 16ch;
+            }
+            .hero__title em {
+                font-style: normal;
+                font-weight: 500;
+                color: var(--pulse);
+                position: relative;
+            }
+            .hero__title em::after {
+                content: "";
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0.2em;
+                height: 4px;
+                background: linear-gradient(
+                    92deg,
+                    var(--pulse),
+                    var(--pulse-3),
+                    transparent
+                );
+                opacity: 0.6;
+            }
+            .hero__lede {
+                margin-top: 2rem;
+                max-width: var(--measure);
+                color: var(--foam-dim);
+                font-size: 1.05rem;
+                line-height: 1.75;
+            }
+            .hero__lede strong {
+                color: var(--foam);
+                font-weight: 500;
+            }
+
+            .hero__ctas {
+                margin-top: 2.5rem;
+                display: flex;
+                gap: 1rem;
+                flex-wrap: wrap;
+            }
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-family: var(--mono);
+                font-size: 0.82rem;
+                letter-spacing: 0.06em;
+                padding: 0.85rem 1.4rem;
+                border: 1px solid var(--rule);
+                border-radius: 2px;
+                color: var(--foam);
+                transition: all 0.2s;
+            }
+            .btn:hover {
+                border-color: var(--pulse);
+                color: var(--pulse);
+            }
+            .btn--primary {
+                background: var(--pulse);
+                color: var(--abyss);
+                border-color: var(--pulse);
+                font-weight: 500;
+            }
+            .btn--primary:hover {
+                background: var(--pulse-3);
+                border-color: var(--pulse-3);
+                color: var(--abyss);
+            }
+
+            /* ---------- pulse waveform decoration ---------- */
+            .waveform {
+                margin-top: 4rem;
+                width: 100%;
+                max-width: 720px;
+                height: 80px;
+                display: block;
+            }
+            .waveform path {
+                fill: none;
+                stroke: var(--pulse);
+                stroke-width: 1.5;
+                stroke-linecap: round;
+            }
+            .waveform .echo {
+                opacity: 0.35;
+                stroke: var(--pulse-3);
+            }
+            .waveform .echo-2 {
+                opacity: 0.18;
+                stroke: var(--pulse-2);
+            }
+
+            /* ---------- section scaffold ---------- */
+            .section {
+                padding: var(--section-y) 0;
+                border-top: 1px solid var(--rule);
+                position: relative;
+            }
+            .section__head {
+                max-width: 56ch;
+                margin-bottom: 3rem;
+            }
+            .section__head h2 {
+                font-family: var(--display);
+                font-weight: 400;
+                font-size: clamp(1.85rem, 3.6vw, 2.8rem);
+                line-height: 1.15;
+                letter-spacing: -0.01em;
+                margin-top: 0.6rem;
+            }
+            .section__head p {
+                margin-top: 1.25rem;
+                color: var(--foam-dim);
+                font-size: 0.96rem;
+            }
+            .label {
+                font-family: var(--mono);
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 0.22em;
+                color: var(--pulse);
+            }
+
+            /* ---------- acronym ---------- */
+            .section--acronym {
+                padding: clamp(4rem, 7vw, 6rem) 0;
+            }
+            .acronym {
+                max-width: 980px;
+            }
+            .acronym__h {
+                font-family: var(--display);
+                font-weight: 300;
+                font-size: clamp(2.2rem, 4.6vw, 3.4rem);
+                margin: 0.6rem 0 2rem;
+                letter-spacing: 0.04em;
+            }
+            .acronym__letters {
+                list-style: none;
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 1px;
+                background: var(--rule);
+                border: 1px solid var(--rule);
+                border-radius: 4px;
+                overflow: hidden;
+            }
+            @media (max-width: 560px) {
+                .acronym__letters {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .acronym__letters li {
+                background: var(--abyss-2);
+                padding: 1.5rem 1.2rem 1.4rem;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+                transition: background 0.2s;
+            }
+            .acronym__letters li::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 3px;
+                background: linear-gradient(
+                    180deg,
+                    var(--pulse),
+                    var(--pulse-2)
+                );
+            }
+            .acronym__letters li:hover {
+                background: var(--abyss-3);
+            }
+            .acronym__letter {
+                font-family: var(--display);
+                font-weight: 300;
+                font-size: 2.6rem;
+                line-height: 1;
+                color: var(--pulse);
+                letter-spacing: -0.02em;
+            }
+            .acronym__letters strong {
+                font-family: var(--mono);
+                font-size: 0.82rem;
+                letter-spacing: 0.04em;
+                color: var(--foam);
+                font-weight: 500;
+                text-transform: lowercase;
+            }
+            .acronym__letters em {
+                font-family: var(--mono);
+                font-size: 0.68rem;
+                color: var(--foam-mute);
+                font-style: normal;
+                letter-spacing: 0.08em;
+            }
+            .acronym__expanded {
+                margin-top: 2rem;
+                max-width: var(--measure);
+                color: var(--foam-dim);
+                font-size: 0.96rem;
+                line-height: 1.75;
+            }
+            .acronym__expanded strong {
+                display: block;
+                font-family: var(--display);
+                font-size: 1.15rem;
+                font-weight: 500;
+                color: var(--pulse);
+                margin-bottom: 0.5rem;
+            }
+
+            /* ---------- five phases ---------- */
+            .phases {
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 1px;
+                background: var(--rule);
+                border: 1px solid var(--rule);
+                border-radius: 4px;
+                overflow: hidden;
+            }
+            @media (max-width: 920px) {
+                .phases {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+            @media (max-width: 540px) {
+                .phases {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .phase {
+                background: var(--abyss-2);
+                padding: 1.6rem 1.4rem 1.8rem;
+                position: relative;
+                transition: background 0.25s;
+            }
+            .phase:hover {
+                background: var(--abyss-3);
+            }
+            .phase__num {
+                font-family: var(--mono);
+                font-size: 0.7rem;
+                letter-spacing: 0.12em;
+                color: var(--pulse);
+            }
+            .phase__name {
+                display: block;
+                font-family: var(--display);
+                font-weight: 500;
+                font-size: 1.1rem;
+                margin-top: 0.35rem;
+                margin-bottom: 0.6rem;
+            }
+            .phase__desc {
+                color: var(--foam-dim);
+                font-size: 0.85rem;
+            }
+            .phase__bar {
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 3px;
+                background: linear-gradient(
+                    180deg,
+                    var(--pulse),
+                    var(--pulse-2)
+                );
+            }
+
+            /* ---------- manifest sample ---------- */
+            .manifest {
+                display: grid;
+                grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+                gap: 3rem;
+                align-items: start;
+            }
+            @media (max-width: 980px) {
+                .manifest {
+                    grid-template-columns: 1fr;
+                }
+            }
+            .manifest__copy h3 {
+                font-family: var(--display);
+                font-weight: 500;
+                font-size: 1.4rem;
+                margin-bottom: 0.85rem;
+            }
+            .manifest__copy p {
+                color: var(--foam-dim);
+                font-size: 0.95rem;
+            }
+            .manifest__copy ul {
+                list-style: none;
+                margin-top: 1.5rem;
+                display: grid;
+                gap: 0.6rem;
+            }
+            .manifest__copy ul li {
+                padding-left: 1.4rem;
+                position: relative;
+                color: var(--foam-dim);
+                font-size: 0.88rem;
+            }
+            .manifest__copy ul li::before {
+                content: "~";
+                position: absolute;
+                left: 0;
+                color: var(--pulse);
+                font-family: var(--mono);
+            }
+
+            .code {
+                background:
+                    linear-gradient(
+                        180deg,
+                        rgba(0, 245, 212, 0.06),
+                        rgba(0, 180, 216, 0.04)
+                    ),
+                    var(--abyss-2);
+                border: 1px solid var(--rule);
+                border-radius: 4px;
+                padding: 1.5rem 1.5rem 1.75rem;
+                font-family: var(--mono);
+                font-size: 0.78rem;
+                line-height: 1.65;
+                color: var(--foam);
+                overflow-x: auto;
+                position: relative;
+            }
+            .code::before {
+                content: "graphonomous.continual_learning.pulse.json";
+                display: block;
+                font-size: 0.7rem;
+                color: var(--foam-mute);
+                margin-bottom: 0.85rem;
+                letter-spacing: 0.05em;
+            }
+            .code .k {
+                color: var(--pulse-3);
+            }
+            .code .s {
+                color: var(--warm);
+            }
+            .code .n {
+                color: var(--hot);
+            }
+            .code .c {
+                color: var(--foam-mute);
+                font-style: italic;
+            }
+
+            /* ---------- tokens (cross-loop signals) ---------- */
+            .tokens {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 1.25rem;
+            }
+            .token {
+                border: 1px solid var(--rule);
+                border-left: 3px solid var(--pulse);
+                padding: 1.4rem 1.25rem;
+                background: var(--abyss-2);
+                border-radius: 0 4px 4px 0;
+            }
+            .token__name {
+                display: block;
+                font-family: var(--mono);
+                font-size: 0.82rem;
+                color: var(--pulse);
+                margin-bottom: 0.4rem;
+            }
+            .token__desc {
+                color: var(--foam-dim);
+                font-size: 0.85rem;
+            }
+
+            /* ---------- nesting / triple loop ---------- */
+            .triple {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                gap: 3rem;
+                align-items: center;
+            }
+            @media (max-width: 980px) {
+                .triple {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .rings {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 1;
+                max-width: 460px;
+                margin: 0 auto;
+            }
+            .ring {
+                position: absolute;
+                border-radius: 50%;
+                border: 1px solid var(--rule);
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                letter-spacing: 0.12em;
+                color: var(--foam-dim);
+            }
+            .ring__label {
+                margin-top: -0.6rem;
+                background: var(--abyss);
+                padding: 0 0.6rem;
+            }
+            .ring--outer {
+                inset: 0;
+                border-color: rgba(0, 245, 212, 0.45);
+            }
+            .ring--mid {
+                inset: 12%;
+                border-color: rgba(76, 201, 240, 0.35);
+            }
+            .ring--inner {
+                inset: 24%;
+                border-color: rgba(0, 180, 216, 0.3);
+            }
+            .ring--core {
+                inset: 36%;
+                border-color: rgba(241, 91, 181, 0.25);
+            }
+            .ring__core-label {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: var(--display);
+                font-size: 0.95rem;
+                font-weight: 500;
+                color: var(--foam);
+                letter-spacing: 0.04em;
+            }
+
+            .triple__copy h3 {
+                font-family: var(--display);
+                font-weight: 500;
+                font-size: 1.4rem;
+                margin-bottom: 0.8rem;
+            }
+            .triple__copy p {
+                color: var(--foam-dim);
+                font-size: 0.92rem;
+                margin-bottom: 1rem;
+            }
+
+            /* ---------- install ---------- */
+            .install {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                gap: 3rem;
+                align-items: start;
+            }
+            @media (max-width: 880px) {
+                .install {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .install h2 {
+                font-family: var(--display);
+                font-weight: 400;
+                font-size: clamp(1.85rem, 3.4vw, 2.6rem);
+                line-height: 1.15;
+                margin: 0.6rem 0 1.25rem;
+            }
+            .install p {
+                color: var(--foam-dim);
+                max-width: var(--measure);
+                margin-bottom: 1.25rem;
+            }
+            .install code-line {
+                display: block;
+                font-family: var(--mono);
+                color: var(--foam);
+            }
+
+            .install-code {
+                font-family: var(--mono);
+                font-size: 0.84rem;
+                line-height: 1.75;
+                background: var(--abyss-2);
+                border: 1px solid var(--rule);
+                border-radius: 4px;
+                padding: 1.6rem 1.5rem;
+                white-space: pre-wrap;
+                overflow-x: auto;
+                position: relative;
+            }
+            .install-code::before {
+                content: "~/$ os-pulse";
+                display: block;
+                font-size: 0.7rem;
+                color: var(--foam-mute);
+                margin-bottom: 0.7rem;
+                letter-spacing: 0.05em;
+            }
+            .install-code .p {
+                color: var(--pulse);
+            }
+            .install-code .c {
+                color: var(--foam-mute);
+            }
+            .install-code .s {
+                color: var(--warm);
+            }
+
+            /* ============================================================
+               §06 · OpenSentience section — pulse field + CTA
+               ============================================================ */
+            .section--os {
+                position: relative;
+                padding-top: clamp(5rem, 10vw, 9rem);
+                padding-bottom: clamp(3rem, 6vw, 5rem);
+                /* Break out of .pulse-wrap 1180px container so the background spans the full viewport. */
+                margin-left: calc(50% - 50vw);
+                margin-right: calc(50% - 50vw);
+                padding-left: calc(50vw - 50%);
+                padding-right: calc(50vw - 50%);
+                border-top: 1px solid var(--rule-soft);
+                border-bottom: 1px solid var(--rule-soft);
+                background:
+                    linear-gradient(
+                        180deg,
+                        rgba(4, 20, 26, 0) 0%,
+                        rgba(0, 245, 212, 0.04) 50%,
+                        rgba(4, 20, 26, 0) 100%
+                    ),
+                    var(--abyss-2);
+            }
+            .section--os::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background:
+                    radial-gradient(
+                        1200px 600px at 50% 20%,
+                        rgba(0, 245, 212, 0.12),
+                        transparent 65%
+                    ),
+                    radial-gradient(
+                        900px 500px at 85% 95%,
+                        rgba(76, 201, 240, 0.09),
+                        transparent 70%
+                    );
+                pointer-events: none;
+                z-index: 0;
+            }
+            .os {
+                position: relative;
+                z-index: 1;
+            }
+            .os__grid {
+                display: grid;
+                grid-template-columns: 1.1fr 0.9fr;
+                gap: clamp(2rem, 5vw, 5rem);
+                align-items: center;
+                margin-top: 1.5rem;
+            }
+            .os__h {
+                font-family: var(--display);
+                font-size: clamp(1.9rem, 3.4vw, 2.8rem);
+                font-weight: 500;
+                line-height: 1.15;
+                letter-spacing: -0.015em;
+                color: var(--foam);
+                max-width: 22ch;
+            }
+            .os__h em {
+                font-style: italic;
+                background: linear-gradient(
+                    92deg,
+                    var(--pulse),
+                    var(--pulse-3) 60%,
+                    var(--warm)
+                );
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+            }
+            .os__lede {
+                margin-top: 1.4rem;
+                max-width: 54ch;
+                font-family: var(--display);
+                font-size: 0.95rem;
+                color: var(--foam-dim);
+                line-height: 1.75;
+            }
+            .os__lede strong {
+                color: var(--foam);
+                font-weight: 500;
+            }
+            .os__list {
+                list-style: none;
+                margin: 1.75rem 0 2rem;
+                padding: 0;
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 0;
+                font-family: var(--mono);
+                font-size: 0.82rem;
+                color: var(--foam-dim);
+            }
+            .os__list li {
+                display: grid;
+                grid-template-columns: 5rem 1fr;
+                gap: 1rem;
+                padding: 0.6rem 0;
+                border-top: 1px solid var(--rule-soft);
+            }
+            .os__list li:last-child {
+                border-bottom: 1px solid var(--rule-soft);
+            }
+            .os__list li span {
+                color: var(--pulse);
+                letter-spacing: 0.06em;
+                font-weight: 600;
+            }
+            .os__list li strong {
+                color: var(--foam);
+                font-weight: 500;
+            }
+
+            /* ---------- CTA button ---------- */
+            .os__cta {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.9rem;
+                padding: 1rem 1.6rem;
+                background: linear-gradient(
+                    92deg,
+                    rgba(0, 245, 212, 0.18),
+                    rgba(76, 201, 240, 0.12) 60%,
+                    rgba(249, 199, 79, 0.15)
+                );
+                border: 1px solid rgba(0, 245, 212, 0.55);
+                border-radius: 999px;
+                text-decoration: none;
+                color: var(--foam);
+                font-family: var(--mono);
+                font-size: 0.88rem;
+                font-weight: 500;
+                letter-spacing: 0.02em;
+                position: relative;
+                overflow: hidden;
+                transition:
+                    transform 0.25s ease,
+                    border-color 0.25s ease,
+                    box-shadow 0.25s ease;
+                box-shadow:
+                    0 0 24px -8px rgba(0, 245, 212, 0.35),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+            }
+            .os__cta::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(
+                    92deg,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0.09) 45%,
+                    transparent 90%
+                );
+                transform: translateX(-100%);
+                transition: transform 0.6s ease;
+            }
+            .os__cta:hover {
+                transform: translateY(-2px);
+                border-color: var(--pulse);
+                box-shadow:
+                    0 12px 40px -16px rgba(0, 245, 212, 0.7),
+                    0 0 0 4px rgba(0, 245, 212, 0.08),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            }
+            .os__cta:hover::before {
+                transform: translateX(100%);
+            }
+            .os__cta-label {
+                position: relative;
+                z-index: 1;
+            }
+            .os__cta-arrow {
+                position: relative;
+                z-index: 1;
+                font-size: 1.1rem;
+                transition: transform 0.3s ease;
+            }
+            .os__cta:hover .os__cta-arrow {
+                transform: translateX(4px);
+            }
+            .os__fineprint {
+                margin-top: 1rem;
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                color: var(--foam-mute);
+                letter-spacing: 0.04em;
+            }
+
+            /* ---------- animated visual (pulse field) ---------- */
+            .os__visual {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 1.2rem;
+            }
+            .os__field {
+                position: relative;
+                width: min(420px, 88vw);
+                aspect-ratio: 1 / 1;
+            }
+            .os__wave {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 60px;
+                height: 60px;
+                border: 1px solid var(--pulse);
+                border-radius: 50%;
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+                animation: pulse-os-wave 4.8s cubic-bezier(0.2, 0.7, 0.2, 1)
+                    infinite;
+            }
+            .os__wave--2 {
+                animation-delay: 1.2s;
+                border-color: var(--pulse-2);
+            }
+            .os__wave--3 {
+                animation-delay: 2.4s;
+                border-color: var(--pulse-3);
+            }
+            .os__wave--4 {
+                animation-delay: 3.6s;
+                border-color: var(--warm);
+            }
+            @keyframes pulse-os-wave {
+                0% {
+                    transform: translate(-50%, -50%) scale(0);
+                    opacity: 0;
+                    border-width: 2px;
+                }
+                8% {
+                    opacity: 0.9;
+                }
+                100% {
+                    transform: translate(-50%, -50%) scale(6.2);
+                    opacity: 0;
+                    border-width: 1px;
+                }
+            }
+            .os__heart {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 96px;
+                height: 96px;
+                transform: translate(-50%, -50%);
+                animation: pulse-os-heart 1.4s ease-in-out infinite;
+                filter: drop-shadow(0 0 18px rgba(0, 245, 212, 0.55));
+            }
+            .os__heart svg {
+                width: 100%;
+                height: 100%;
+            }
+            @keyframes pulse-os-heart {
+                0%,
+                100% {
+                    transform: translate(-50%, -50%) scale(1);
+                }
+                50% {
+                    transform: translate(-50%, -50%) scale(1.08);
+                }
+            }
+            .os__satellites {
+                position: absolute;
+                inset: 0;
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                animation: pulse-os-orbit 48s linear infinite;
+            }
+            .os__satellites li {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 0;
+                height: 0;
+                transform: rotate(calc(var(--i) * 60deg))
+                    translate(calc(min(420px, 88vw) * 0.42))
+                    rotate(calc(var(--i) * -60deg));
+            }
+            .os__satellites li span {
+                position: absolute;
+                top: -14px;
+                left: -26px;
+                width: 56px;
+                height: 28px;
+                display: grid;
+                place-items: center;
+                font-family: var(--mono);
+                font-size: 0.62rem;
+                font-weight: 600;
+                letter-spacing: 0.05em;
+                color: var(--foam);
+                background: rgba(4, 20, 26, 0.92);
+                border: 1px solid rgba(0, 245, 212, 0.55);
+                border-radius: 4px;
+                box-shadow: 0 0 14px rgba(0, 245, 212, 0.35);
+                animation:
+                    pulse-os-counter 48s linear infinite,
+                    pulse-os-sat-glow 3.8s ease-in-out infinite;
+                animation-delay: 0s, calc(var(--i) * 0.5s);
+            }
+            @keyframes pulse-os-orbit {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+            @keyframes pulse-os-counter {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(-360deg);
+                }
+            }
+            @keyframes pulse-os-sat-glow {
+                0%,
+                100% {
+                    box-shadow: 0 0 10px rgba(0, 245, 212, 0.25);
+                    border-color: rgba(0, 245, 212, 0.45);
+                }
+                50% {
+                    box-shadow: 0 0 22px rgba(0, 245, 212, 0.75);
+                    border-color: var(--pulse);
+                }
+            }
+            .os__caption {
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                color: var(--foam-mute);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .os__wave,
+                .os__heart,
+                .os__satellites,
+                .os__satellites li span {
+                    animation: none !important;
+                }
+            }
+            @media (max-width: 900px) {
+                .os__grid {
+                    grid-template-columns: 1fr;
+                }
+                .os__visual {
+                    order: 2;
+                }
+            }
+
+            /* ---------- footer ---------- */
+            footer {
+                margin-top: clamp(5rem, 8vw, 7rem);
+                padding: 2.5rem 0 3rem;
+                border-top: 1px solid var(--rule);
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 1.5rem;
+                align-items: center;
+                color: var(--foam-mute);
+                font-size: 0.78rem;
+            }
+            @media (max-width: 720px) {
+                footer {
+                    grid-template-columns: 1fr;
+                }
+            }
+            footer strong {
+                display: block;
+                font-family: var(--display);
+                font-weight: 500;
+                font-size: 1rem;
+                letter-spacing: 0.18em;
+                color: var(--foam);
+                margin-bottom: 0.25rem;
+            }
+            footer .stack {
+                text-align: center;
+            }
+            footer .stack b {
+                color: var(--pulse);
+                font-weight: 500;
+            }
+            footer .links {
+                display: flex;
+                gap: 1.5rem;
+                justify-content: flex-end;
+            }
+            footer .links a:hover {
+                color: var(--pulse);
+            }
+
+            @media (max-width: 760px) {
+                .topbar {
+                    flex-wrap: wrap;
+                    gap: 1rem;
+                }
+                .nav {
+                    order: 3;
+                    width: 100%;
+                    margin-left: 0;
+                    flex-wrap: wrap;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <main class="pulse-wrap">
+            <header class="topbar">
+                <a class="brand" href="/" aria-label="PULSE">
+                    <svg viewBox="0 0 80 40" aria-hidden="true">
+                        <path
+                            d="M2 22 L18 22 L22 8 L26 36 L30 22 L42 22 L46 14 L50 30 L54 22 L78 22"
+                            fill="none"
+                            stroke="#00f5d4"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+                    <span>PULSE</span>
+                    <span class="dot" aria-hidden="true"></span>
+                </a>
+                <nav class="nav" aria-label="Primary">
+                    <a href="#acronym">acronym</a>
+                    <a href="#phases">phases</a>
+                    <a href="#manifest">manifest</a>
+                    <a href="#tokens">signals</a>
+                    <a href="#nesting">nesting</a>
+                    <a href="#install">install</a>
+                    <a href="#opensentience">open research</a>
+                </nav>
+                <span class="badge">OS-010</span>
+                <a href="https://github.com/c-u-l8er/PULSE" target="_blank"
+                    >GitHub →</a
+                >
+            </header>
+
+            <section class="hero">
+                <p class="hero__eyebrow">
+                    OS-010 · the temporal algebra of the [&amp;] stack
+                </p>
+                <h1 class="hero__title">
+                    Every loop has a <em>rhythm</em>.<br />
+                    PULSE is how it<br />
+                    declares one.
+                </h1>
+                <p class="hero__lede">
+                    PULSE is the temporal manifest standard for closed-loop
+                    systems. A loop's
+                    <strong
+                        >phases, cadence, nesting, substrates,
+                        invariants,</strong
+                    >
+                    and <strong>cross-loop signal connections</strong> all live
+                    in a single <code>*.pulse.json</code> file. Conforming loops
+                    become automatically PRISM-evaluable, plug into
+                    Graphonomous, and circulate cleanly with any other
+                    PULSE-aware system.
+                </p>
+
+                <div class="hero__ctas">
+                    <a class="btn btn--primary" href="#install"
+                        >npx os-pulse →</a
+                    >
+                    <a class="btn" href="#manifest">read a manifest</a>
+                </div>
+
+                <svg class="waveform" viewBox="0 0 720 80" aria-hidden="true">
+                    <path
+                        class="echo-2"
+                        d="M0,40 Q40,40 60,40 T80,40 L130,40 L150,15 L170,65 L190,40 L240,40 L260,28 L280,52 L300,40 L720,40"
+                    />
+                    <path
+                        class="echo"
+                        d="M0,40 Q20,40 40,40 T60,40 L110,40 L130,18 L150,62 L170,40 L220,40 L240,30 L260,50 L280,40 L720,40"
+                    />
+                    <path
+                        d="M0,40 L90,40 L110,20 L130,60 L150,40 L200,40 L220,32 L240,48 L260,40 L320,40 L340,8 L360,72 L380,40 L720,40"
+                    />
+                </svg>
+            </section>
+
+            <section
+                class="section section--acronym"
+                id="acronym"
+                aria-label="What PULSE stands for"
+            >
+                <div class="acronym">
+                    <span class="label">§00 · the name</span>
+                    <h2 class="acronym__h">PULSE</h2>
+                    <ol class="acronym__letters">
+                        <li>
+                            <span class="acronym__letter">P</span
+                            ><strong>rotocol</strong>
+                        </li>
+                        <li>
+                            <span class="acronym__letter">U</span
+                            ><strong>niform</strong><em>(for)</em>
+                        </li>
+                        <li>
+                            <span class="acronym__letter">L</span
+                            ><strong>oop</strong>
+                        </li>
+                        <li>
+                            <span class="acronym__letter">S</span
+                            ><strong>tate</strong>
+                        </li>
+                        <li>
+                            <span class="acronym__letter">E</span
+                            ><strong>xchange</strong>
+                        </li>
+                    </ol>
+                    <p class="acronym__expanded">
+                        <strong
+                            >Protocol for Uniform Loop State Exchange.</strong
+                        >
+                        One vocabulary for how every loop in the [&amp;]
+                        ecosystem declares its rhythm, circulates state, and
+                        hands off signals to its neighbors — so any system can
+                        interoperate without bespoke integration.
+                    </p>
+                </div>
+            </section>
+
+            <section class="section" id="phases">
+                <div class="section__head">
+                    <span class="label">§01 · the five canonical phases</span>
+                    <h2>Every loop. Five phases. One algebra.</h2>
+                    <p>
+                        PULSE crystallizes a decade of agent-loop folklore into
+                        five canonical phase kinds. These are the same phases
+                        Graphonomous uses for memory and PRISM uses for
+                        benchmarking — because the underlying rhythm is the
+                        same.
+                    </p>
+                </div>
+
+                <ol class="phases">
+                    <li class="phase">
+                        <span class="phase__bar"></span>
+                        <span class="phase__num">01</span>
+                        <span class="phase__name">Retrieve</span>
+                        <span class="phase__desc"
+                            >Pull context from substrates before reasoning. Read
+                            paths only.</span
+                        >
+                    </li>
+                    <li class="phase">
+                        <span class="phase__bar"></span>
+                        <span class="phase__num">02</span>
+                        <span class="phase__name">Route</span>
+                        <span class="phase__desc"
+                            >Decide whether to act, deliberate further, or
+                            escalate.</span
+                        >
+                    </li>
+                    <li class="phase">
+                        <span class="phase__bar"></span>
+                        <span class="phase__num">03</span>
+                        <span class="phase__name">Act</span>
+                        <span class="phase__desc"
+                            >Mutate substrate or external system. The only
+                            side-effecting phase.</span
+                        >
+                    </li>
+                    <li class="phase">
+                        <span class="phase__bar"></span>
+                        <span class="phase__num">04</span>
+                        <span class="phase__name">Learn</span>
+                        <span class="phase__desc"
+                            >Close the feedback loop with outcome signals and
+                            confidence updates.</span
+                        >
+                    </li>
+                    <li class="phase">
+                        <span class="phase__bar"></span>
+                        <span class="phase__num">05</span>
+                        <span class="phase__name">Consolidate</span>
+                        <span class="phase__desc"
+                            >Maintain substrate health at session
+                            boundaries.</span
+                        >
+                    </li>
+                </ol>
+            </section>
+
+            <section class="section" id="manifest">
+                <div class="section__head">
+                    <span class="label">§02 · one file describes a loop</span>
+                    <h2>
+                        Loops declare themselves. The runtime trusts the
+                        manifest.
+                    </h2>
+                </div>
+
+                <div class="manifest">
+                    <div class="manifest__copy">
+                        <h3>What's in a *.pulse.json</h3>
+                        <p>
+                            A PULSE manifest tells the runtime — and any
+                            observer — exactly how the loop ticks. The schema is
+                            JSON Schema draft 2020-12 and ships with twelve
+                            conformance tests.
+                        </p>
+                        <ul>
+                            <li>
+                                <strong>phases</strong> — ordered phase
+                                signatures, each typed by kind.
+                            </li>
+                            <li>
+                                <strong>cadence</strong> — invocation rate, idle
+                                policy, jitter.
+                            </li>
+                            <li>
+                                <strong>substrates</strong> — what state the
+                                phases read or write.
+                            </li>
+                            <li>
+                                <strong>invariants</strong> — atomicity,
+                                idempotency, monotonicity claims.
+                            </li>
+                            <li>
+                                <strong>connections</strong> — cross-loop signal
+                                edges.
+                            </li>
+                            <li>
+                                <strong>nesting</strong> — child loops and how
+                                they wait on their parent.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <pre
+                        class="code"
+                    ><span class="k">"loop_id"</span>: <span class="s">"graphonomous.continual_learning"</span>,
+<span class="k">"version"</span>: <span class="s">"0.4.0"</span>,
+<span class="k">"phases"</span>: [
+  { <span class="k">"kind"</span>: <span class="s">"retrieve"</span>, <span class="k">"name"</span>: <span class="s">"context"</span> },
+  { <span class="k">"kind"</span>: <span class="s">"route"</span>,    <span class="k">"name"</span>: <span class="s">"deliberate?"</span> },
+  { <span class="k">"kind"</span>: <span class="s">"act"</span>,      <span class="k">"name"</span>: <span class="s">"store_node"</span> },
+  { <span class="k">"kind"</span>: <span class="s">"learn"</span>,    <span class="k">"name"</span>: <span class="s">"from_outcome"</span> },
+  { <span class="k">"kind"</span>: <span class="s">"consolidate"</span>, <span class="k">"name"</span>: <span class="s">"merge"</span> }
+],
+<span class="k">"cadence"</span>: { <span class="k">"on"</span>: <span class="s">"invocation"</span>, <span class="k">"idle"</span>: <span class="s">"sleep"</span> },
+<span class="k">"substrates"</span>: [<span class="s">"sqlite_kg"</span>, <span class="s">"sqlite_vec"</span>],
+<span class="k">"invariants"</span>: [<span class="s">"act.atomic"</span>, <span class="s">"learn.idempotent"</span>],
+<span class="k">"connections"</span>: [
+  {
+    <span class="k">"to"</span>: <span class="s">"prism.benchmark"</span>,
+    <span class="k">"emits"</span>: [<span class="s">"OutcomeSignal"</span>, <span class="s">"TopologyContext"</span>]
+  }
+]<span class="c">  // ↑ a loop fragment from the reference manifest</span></pre>
+                </div>
+            </section>
+
+            <section class="section" id="tokens">
+                <div class="section__head">
+                    <span class="label">§03 · cross-loop signals</span>
+                    <h2>Five canonical tokens. Wrapped in CloudEvents.</h2>
+                    <p>
+                        When loops talk to other loops, the payload is one of
+                        five typed tokens, wrapped in a CloudEvents v1.0
+                        envelope. This is how Graphonomous tells PRISM "I'm
+                        ready to be benchmarked," and how PRISM tells
+                        Graphonomous "your κ-routing got worse this cycle."
+                    </p>
+                </div>
+
+                <div class="tokens">
+                    <article class="token">
+                        <span class="token__name">TopologyContext</span>
+                        <p class="token__desc">
+                            A snapshot of structural state — graph subset, κ
+                            value, current goals.
+                        </p>
+                    </article>
+                    <article class="token">
+                        <span class="token__name">DeliberationResult</span>
+                        <p class="token__desc">
+                            The output of a route phase: chosen action,
+                            alternates, and confidence.
+                        </p>
+                    </article>
+                    <article class="token">
+                        <span class="token__name">OutcomeSignal</span>
+                        <p class="token__desc">
+                            Did the action succeed? Decoupled from any specific
+                            reward function.
+                        </p>
+                    </article>
+                    <article class="token">
+                        <span class="token__name">ReputationUpdate</span>
+                        <p class="token__desc">
+                            Cross-loop adjustments to a system's standing — who
+                            to trust next time.
+                        </p>
+                    </article>
+                    <article class="token">
+                        <span class="token__name">ConsolidationEvent</span>
+                        <p class="token__desc">
+                            A substrate maintenance pass completed; observers
+                            can refresh their caches.
+                        </p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section" id="nesting">
+                <div class="section__head">
+                    <span class="label">§04 · loops inside loops</span>
+                    <h2>Triple-nested cadence in a single declaration.</h2>
+                    <p>
+                        PULSE makes loop nesting first-class. A child loop
+                        declares its parent and how it waits — every phase,
+                        every connection becomes traceable across nesting depth.
+                        This is what unlocks the [&amp;] triple loop: structural
+                        composition, diagnostic measurement, and temporal
+                        manifest in one stack.
+                    </p>
+                </div>
+
+                <div class="triple">
+                    <div class="rings" aria-hidden="true">
+                        <div class="ring ring--outer">
+                            <span class="ring__label">PRISM diagnostic</span>
+                        </div>
+                        <div class="ring ring--mid">
+                            <span class="ring__label">Graphonomous</span>
+                        </div>
+                        <div class="ring ring--inner">
+                            <span class="ring__label">deliberate</span>
+                        </div>
+                        <div class="ring ring--core"></div>
+                        <div class="ring__core-label">PULSE<br />ticks</div>
+                    </div>
+
+                    <div class="triple__copy">
+                        <h3>Three loops, one circulation.</h3>
+                        <p>
+                            The outermost loop is the PRISM benchmark cycle —
+                            slow, deliberate, cycle-scoped. Inside it runs the
+                            Graphonomous memory loop — fast, per-task. Inside
+                            that runs the deliberation loop — bursty, only when
+                            κ-routing demands it.
+                        </p>
+                        <p>
+                            Each loop has its own cadence and its own manifest.
+                            PULSE is what keeps them in sync without forcing
+                            them into the same timestep.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="install">
+                <div class="install">
+                    <div>
+                        <span class="label">§05 · install</span>
+                        <h2>Validate, register, circulate.</h2>
+                        <p>
+                            <code>os-pulse</code> is the reference MCP server
+                            for PULSE. It validates manifests against the v0.1
+                            schema, runs the 12-test conformance suite, and
+                            persists registered loops, connections, and
+                            CloudEvents envelopes in an embedded SQLite
+                            database.
+                        </p>
+                        <p>
+                            Drop it into <code>.mcp.json</code>, register your
+                            loop's manifest, and any PULSE-aware tool —
+                            including PRISM — can discover your phases,
+                            signatures, substrates, and invariants
+                            automatically.
+                        </p>
+                    </div>
+
+                    <pre
+                        class="install-code"
+                    ><span class="c"># 1. install (no global pollution)</span>
+<span class="p">$</span> npx -y os-pulse --db ~/.os-pulse/manifests.db
+
+<span class="c"># 2. validate a manifest before registering</span>
+<span class="p">$</span> os-pulse validate ./graphonomous.continual_learning.pulse.json
+
+<span class="c"># 3. register from any MCP-aware agent</span>
+<span class="p">→</span> register_manifest <span class="s">"./prism.benchmark.pulse.json"</span>
+<span class="p">→</span> trace_connection <span class="s">"prism.benchmark"</span> --depth 3
+<span class="p">→</span> export_topology --format dot
+
+<span class="c"># 4. circulate cross-loop signals</span>
+<span class="p">→</span> emit_signal OutcomeSignal --to prism.benchmark
+</pre>
+                </div>
+            </section>
+
+            <section class="section section--os" id="opensentience">
+                <div class="os">
+                    <span class="label">§06 · open research</span>
+
+                    <div class="os__grid">
+                        <div class="os__copy">
+                            <h2 class="os__h">
+                                PULSE is one clock in an
+                                <em>open research program</em> on machine
+                                cognition.
+                            </h2>
+                            <p class="os__lede">
+                                OpenSentience publishes the specifications —
+                                OS-001 through OS-010 — that turn agent
+                                cognition into something you can
+                                <strong>read</strong>, <strong>measure</strong>,
+                                and <strong>synchronize</strong>. Structured
+                                memory. Deliberation topology. Continual
+                                learning. Temporal algebra. Every protocol ships
+                                as a public document, a reference
+                                implementation, and a test.
+                            </p>
+                            <ul class="os__list">
+                                <li>
+                                    <span>OS-006</span>ampersand protocol —
+                                    structural composition
+                                </li>
+                                <li>
+                                    <span>OS-008</span>agent harness — pipeline
+                                    enforcement
+                                </li>
+                                <li>
+                                    <span>OS-009</span>PRISM — diagnostic loop
+                                </li>
+                                <li>
+                                    <span>OS-010</span
+                                    ><strong
+                                        >PULSE — temporal loop algebra (you are
+                                        here)</strong
+                                    >
+                                </li>
+                            </ul>
+                            <a
+                                class="os__cta"
+                                href="https://opensentience.org"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                <span class="os__cta-label"
+                                    >Explore OpenSentience</span
+                                >
+                                <span class="os__cta-arrow" aria-hidden="true"
+                                    >→</span
+                                >
+                            </a>
+                            <p class="os__fineprint">
+                                opensentience.org — open research into machine
+                                cognition, published by Ampersand Box Design.
+                            </p>
+                        </div>
+
+                        <div class="os__visual" aria-hidden="true">
+                            <div class="os__field">
+                                <div class="os__wave os__wave--1"></div>
+                                <div class="os__wave os__wave--2"></div>
+                                <div class="os__wave os__wave--3"></div>
+                                <div class="os__wave os__wave--4"></div>
+                                <div class="os__heart">
+                                    <svg
+                                        viewBox="0 0 120 120"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <defs>
+                                            <radialGradient
+                                                id="pulse-os-core"
+                                                cx="50%"
+                                                cy="50%"
+                                                r="50%"
+                                            >
+                                                <stop
+                                                    offset="0%"
+                                                    stop-color="#ffffff"
+                                                    stop-opacity="1"
+                                                />
+                                                <stop
+                                                    offset="45%"
+                                                    stop-color="#00f5d4"
+                                                    stop-opacity="0.85"
+                                                />
+                                                <stop
+                                                    offset="100%"
+                                                    stop-color="#00f5d4"
+                                                    stop-opacity="0"
+                                                />
+                                            </radialGradient>
+                                        </defs>
+                                        <circle
+                                            cx="60"
+                                            cy="60"
+                                            r="50"
+                                            fill="url(#pulse-os-core)"
+                                        />
+                                        <circle
+                                            cx="60"
+                                            cy="60"
+                                            r="10"
+                                            fill="#ffffff"
+                                        />
+                                    </svg>
+                                </div>
+                                <ul class="os__satellites">
+                                    <li style="--i: 0"><span>OS-001</span></li>
+                                    <li style="--i: 1"><span>OS-003</span></li>
+                                    <li style="--i: 2"><span>OS-006</span></li>
+                                    <li style="--i: 3"><span>OS-008</span></li>
+                                    <li style="--i: 4"><span>OS-009</span></li>
+                                    <li style="--i: 5"><span>OS-010</span></li>
+                                </ul>
+                            </div>
+                            <p class="os__caption">
+                                ten protocols · one open sentience
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <footer>
+                <div>
+                    <strong>PULSE</strong>
+                    <span>OpenSentience Specification OS-010</span>
+                </div>
+                <div class="stack">
+                    [&amp;] structural · PRISM diagnostic ·
+                    <b>PULSE temporal</b>
+                </div>
+                <div class="links">
+                    <a
+                        href="https://github.com/c-u-l8er/AmpersandBoxDesign"
+                        target="_blank"
+                        rel="noopener"
+                        >GitHub</a
+                    >
+                    <a
+                        href="https://www.npmjs.com/package/os-pulse"
+                        target="_blank"
+                        rel="noopener"
+                        >npm</a
+                    >
+                    <a
+                        href="https://opensentience.org"
+                        target="_blank"
+                        rel="noopener"
+                        >OpenSentience</a
+                    >
+                </div>
+            </footer>
+        </main>
+    </body>
+</html>
