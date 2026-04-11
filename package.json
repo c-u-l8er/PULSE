@@ -1,0 +1,68 @@
+{
+  "name": "os-pulse",
+  "version": "0.1.0",
+  "description": "PULSE OS-010 reference MCP server — validates, registers, and routes PULSE loop manifests; emits CloudEvents v1 envelopes for the five canonical cross-loop tokens. One of four MCP servers in the [&] three-protocol stack (box-and-box, graphonomous, os-prism, os-pulse).",
+  "license": "Apache-2.0",
+  "author": "Ampersand Box Design <travis@ampersandboxdesign.com> (https://ampersandboxdesign.com)",
+  "homepage": "https://opensentience.org/docs/spec/OS-010-PULSE-SPECIFICATION.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/c-u-l8er/AmpersandBoxDesign.git",
+    "directory": "PULSE"
+  },
+  "bugs": {
+    "url": "https://github.com/c-u-l8er/AmpersandBoxDesign/issues"
+  },
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "os-pulse": "bin/os-pulse.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "schemas",
+    "README.md",
+    "docs/NPM_PACKAGE.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node bin/os-pulse.js --help",
+    "test": "node --test --experimental-strip-types test/*.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "pulse",
+    "os-pulse",
+    "os-010",
+    "opensentience",
+    "ampersand",
+    "loop",
+    "cloudevents",
+    "manifest",
+    "continual-learning",
+    "benchmark"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "ajv": "^8.18.0",
+    "ajv-formats": "^3.0.1",
+    "better-sqlite3": "^12.8.0",
+    "cloudevents": "^10.0.0",
+    "sqlite-vec": "0.1.10-alpha.3",
+    "yargs": "^17.7.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.10.0",
+    "@types/yargs": "^17.0.33",
+    "typescript": "^5.6.3"
+  }
+}

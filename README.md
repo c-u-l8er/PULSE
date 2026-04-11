@@ -1,170 +1,114 @@
-# PULSE — Protocol for Uniform Loop State Exchange
+# os-pulse
 
-**OpenSentience Specification OS-010**
+**OpenSentience OS-010 PULSE reference MCP server.**
 
-The temporal algebra of the [&] Protocol stack. PULSE declares how closed-loop
-agent processes cycle over time, share substrates, and signal each other.
+One of four MCP servers in the [&] three-protocol stack:
 
-> "[&] composes agents. PRISM measures them. PULSE gives them a heartbeat."
+| Package        | Role                                     | Install                                                          |
+|----------------|------------------------------------------|------------------------------------------------------------------|
+| `box-and-box`  | [&] Protocol validator / composer        | `npx -y box-and-box --db ~/.box-and-box/specs.db`                |
+| `graphonomous` | Memory loop (5 machines)                 | `npx -y graphonomous --db ~/.graphonomous/knowledge.db`          |
+| `os-prism`     | Diagnostic loop (6 machines)             | `npx -y os-prism --db ~/.os-prism/benchmarks.db`                 |
+| `os-pulse`     | PULSE manifest registry (**this**)       | `npx -y os-pulse --db ~/.os-pulse/manifests.db`                  |
 
-## What PULSE Is
+## What os-pulse does
 
-A **manifest standard** (not a runtime) for declaring closed-loop agent
-processes. Every [&] portfolio product implements one or more closed loops
-(memory consolidation, deliberation, build pipelines, marketplace trust,
-etc.). PULSE gives them a uniform way to declare:
+- Validates `*.pulse.json` loop manifests against `pulse-loop-manifest.v0.1.json`
+  (JSON Schema draft 2020-12).
+- Runs the 12-test PULSE v0.1 conformance suite and stores the report.
+- Persists registered manifests, connections, and phase invocations in an
+  embedded SQLite + sqlite-vec database.
+- Emits and receives **CloudEvents v1.0 envelopes** for the five canonical
+  cross-loop tokens (`TopologyContext`, `DeliberationResult`, `OutcomeSignal`,
+  `ReputationUpdate`, `ConsolidationEvent`).
+- Exposes 10 MCP tools and 3 resources over stdio.
 
-- Their **phases** (variable length, canonical or custom kinds)
-- Their **cadence** (event, periodic, streaming, idle, cross-loop, manual)
-- Their **substrates** (memory, policy, audit, auth, transport, time)
-- Their **invariants** (atomicity, idempotency, kappa-routing, quorum, etc.)
-- Their **connections** to other loops (CloudEvents-compatible signaling)
-- Their **nesting** (arbitrary depth — PRISM contains Graphonomous contains Deliberation)
+## MCP tools
 
-## Why a Loop Protocol Now
+| Tool                 | Description                                                           |
+|----------------------|-----------------------------------------------------------------------|
+| `register_manifest`  | Validate + persist a manifest; runs conformance.                     |
+| `validate_manifest`  | Dry-run validation; returns conformance report without persistence.  |
+| `list_loops`         | List registered loops, filterable by owner or parent.                |
+| `get_manifest`       | Retrieve a full manifest JSON by `loop_id[@version]`.                |
+| `resolve_phase`      | Return a phase definition + substrate/invariant scope.               |
+| `emit_signal`        | Wrap a token payload in a CloudEvents v1 envelope and persist.        |
+| `receive_signal`     | Deliver pending envelopes for a target loop and mark delivered.       |
+| `trace_connection`   | Walk outbound connections up to `max_depth`.                          |
+| `run_conformance`    | Re-run the 12 conformance tests against a registered loop.           |
+| `export_topology`    | Export loops + edges + nesting as JSON or Graphviz DOT.              |
 
-The [&] portfolio contains at least 11 closed-loop processes operating at
-cadences from sub-millisecond to monthly. Three nesting levels are already
-in production. Without a uniform manifest, every product reinvents phase
-ordering, cadence, signaling, and audit correlation.
+## MCP resources
 
-| Concern                    | Today (per-product)                       | With PULSE                              |
-|----------------------------|-------------------------------------------|-----------------------------------------|
-| Phase ordering             | Hardcoded in supervision tree             | Declared in `phases[]`                  |
-| Cadence                    | Cron, GenServer timer, Broadway, custom   | Declared in `cadence{}`                 |
-| Cross-loop signaling       | Phoenix.PubSub, NOTIFY, ad-hoc            | Declared in `connections[]`             |
-| Audit correlation          | Per-substrate, no shared trace_id         | Mandated `trace_id` propagation         |
-| Reputation semantics       | 5 incompatible definitions                | Canonical `ReputationUpdate` token      |
-| PRISM evaluation           | Bespoke per system                        | PRISM reads PULSE manifests directly    |
+| URI                            | Returns                                 |
+|--------------------------------|-----------------------------------------|
+| `pulse://runtime/health`       | Server health + manifest / signal counts. |
+| `pulse://manifests/recent`     | Recently registered manifests.          |
+| `pulse://signals/recent`       | Recent CloudEvents envelopes.           |
 
-## The Five Canonical Phase Kinds
+## Install
 
-| Kind          | Meaning                                                      |
-|---------------|--------------------------------------------------------------|
-| `retrieve`    | Read from a substrate to gather context for the iteration.   |
-| `route`       | Decide what to do next based on retrieved context.           |
-| `act`         | Mutate the world or a substrate (write).                     |
-| `learn`       | Update beliefs/confidence/reputation from outcome.           |
-| `consolidate` | Compress, merge, or promote state across timescales.         |
-
-These match Graphonomous v0.4's machine architecture and PRISM v3.0's phase
-taxonomy. Loops with different shapes use `kind: "custom"` with a
-`custom_kind` string (e.g., `compose`, `interact`, `observe`, `reflect`,
-`diagnose` for PRISM; `bid`, `negotiate`, `elect` for AgenTroMatic).
-
-## The Five Canonical Tokens
-
-Cross-loop signals are typed by one of five canonical tokens:
-
-| Token                 | Emitted By                            | Carries                                  |
-|-----------------------|---------------------------------------|------------------------------------------|
-| `TopologyContext`     | `retrieve` phases                     | SCC structure + κ value                  |
-| `DeliberationResult`  | inner deliberation loops              | Verdict + evidence chain + dissent       |
-| `OutcomeSignal`       | `learn` phases                        | Action result + causal attribution       |
-| `ReputationUpdate`    | any reputation-touching phase         | Subject delta + calibration              |
-| `ConsolidationEvent`  | `consolidate` phases                  | Merged nodes + convergence status        |
-
-## The Seven Invariants
-
-A conforming runtime must enforce all seven for any loop that opts in:
-
-1. **Phase atomicity** — phases complete or roll back; no partial output
-2. **Feedback immutability** — `learn` is append-only over confidence
-3. **Append-only audit** — every transition is logged with trace_id
-4. **κ-routing** — `max_kappa > 0` forces `route → deliberate` (OS-002)
-5. **Quorum before commit** — outer `act` waits for inner `DeliberationResult` ≥ threshold
-6. **Outcome grounding** — every `act` records `causal_parent_ids` (OS-001)
-7. **trace_id propagation** — every substrate call carries trace_id
-
-## The Three-Protocol Stack
-
-```
-┌──────────────────────────────────────────────────────────┐
-│  PRISM    — measures loops over time      (diagnostic)   │ OS-009
-├──────────────────────────────────────────────────────────┤
-│  PULSE    — declares loops + circulation   (temporal)    │ OS-010
-├──────────────────────────────────────────────────────────┤
-│  [&]      — composes capabilities          (structural)  │ AmpersandBoxDesign
-└──────────────────────────────────────────────────────────┘
+```bash
+npx -y os-pulse --db ~/.os-pulse/manifests.db
 ```
 
-## Quick Start (manifest authoring)
-
-A minimal PULSE manifest looks like this:
+Or in `.mcp.json`:
 
 ```jsonc
 {
-  "$schema": "https://opensentience.org/schemas/pulse-loop-manifest.v0.1.json",
-  "pulse_protocol_version": "0.1",
-  "loop_id": "myorg.my_loop",
-  "version": "0.1.0",
-  "owner": "myorg.com",
-  "workspace_scope": "required",
-
-  "phases": [
-    { "id": "fetch",   "kind": "retrieve", "outputs": { "to": "phase:decide" } },
-    { "id": "decide",  "kind": "route",    "outputs": { "to": "phase:apply" } },
-    { "id": "apply",   "kind": "act",      "outputs": { "to": "substrate:memory" } },
-    { "id": "feedback","kind": "learn",    "outputs": { "to": "substrate:memory" } }
-  ],
-
-  "closure": { "from_phase": "feedback", "to_phase": "fetch", "via": "substrate:memory" },
-
-  "cadence": { "type": "event", "params": { "trigger": "external_request" } },
-
-  "substrates": {
-    "memory":    "graphonomous://workspace/{ws_id}",
-    "policy":    "delegatic://workspace/{ws_id}",
-    "audit":     "delegatic://workspace/{ws_id}/audit",
-    "auth":      "open_sentience://workspace/{ws_id}",
-    "transport": "mcp"
-  },
-
-  "invariants": {
-    "phase_atomicity":      true,
-    "feedback_immutability":true,
-    "append_only_audit":    true,
-    "outcome_grounding":    true,
-    "trace_id_propagation": true
+  "mcpServers": {
+    "pulse": {
+      "command": "npx",
+      "args": ["-y", "os-pulse", "--db", "~/.os-pulse/manifests.db"]
+    }
   }
 }
 ```
 
-## Reference Manifests
+## Flags
 
-Three canonical manifests ship with this spec:
+| Flag             | Default                       |
+|------------------|-------------------------------|
+| `--db <path>`    | `~/.os-pulse/manifests.db`    |
+| `--transport`    | `stdio` (only; HTTP is planned) |
+| `--schema-path`  | bundled `pulse-loop-manifest.v0.1.json` |
+| `--log-level`    | `info`                        |
 
-| Manifest                  | File                                                  | Phases |
-|---------------------------|-------------------------------------------------------|--------|
-| Graphonomous CL Loop      | `manifests/graphonomous.continual_learning.json`      | 5      |
-| PRISM Benchmark Loop      | `manifests/prism.benchmark.json`                      | 5 (custom) |
-| AgenTroMatic Deliberation | `manifests/agentromatic.deliberation.json`            | 7      |
+## Conformance suite (12 tests)
 
-These are the stress tests for the v0.1 schema. If a new field is needed
-for a portfolio loop, the schema is incomplete and must be updated before
-v0.1 lock.
+1. **T01** Schema validation (authoritative — ajv against v0.1 schema)
+2. **T02** Phase atomicity
+3. **T03** Phase idempotency
+4. **T04** Nesting waits
+5. **T05** κ-routing
+6. **T06** Quorum before commit
+7. **T07** Append-only audit
+8. **T08** Signal deduplication (runtime-only — returns `pending`)
+9. **T09** Substrate degradation
+10. **T10** Multi-tenant isolation (runtime-only — returns `pending`)
+11. **T11** trace_id propagation
+12. **T12** Protocol version monotonicity
 
-## Conformance
+Tests that require a running loop to observe runtime behavior return
+`pending` in v0.1. Manifest-level checks are exhaustive.
 
-A runtime claims PULSE v0.1 conformance only if it passes all 12
-conformance tests (see spec §12). Tests cover atomicity, idempotency,
-nesting waits, κ-routing, quorum, audit, deduplication, signal delivery,
-substrate degradation, multi-tenant isolation, trace propagation, and
-schema validation.
+## Build from source
 
-## Specification
+```bash
+git clone https://github.com/c-u-l8er/AmpersandBoxDesign
+cd AmpersandBoxDesign/PULSE
+npm install
+npm run build
+node bin/os-pulse.js --help
+```
 
-Full spec: [OS-010-PULSE-SPECIFICATION.md](https://opensentience.org/docs/spec/OS-010-PULSE-SPECIFICATION.md)
+## Spec
 
-Lives in the OpenSentience research collection at
-`opensentience.org/docs/spec/OS-010-PULSE-SPECIFICATION.md`.
-
-## Status
-
-**v0.1 Draft.** Schema, canonical kinds, tokens, and invariants are
-stable for v0.1. Field-level additions are permitted before v1.0; all
-v0.1 commitments lock at v1.0 release.
+- [`docs/NPM_PACKAGE.md`](./docs/NPM_PACKAGE.md) — full package specification
+- [`schemas/pulse-loop-manifest.v0.1.json`](./schemas/pulse-loop-manifest.v0.1.json) — manifest schema
+- [`manifests/`](./manifests/) — reference manifests (graphonomous, prism, agentromatic)
+- [OS-010 PULSE Specification](https://opensentience.org/docs/spec/OS-010-PULSE-SPECIFICATION.md)
 
 ## License
 
-Apache 2.0
+Apache-2.0
