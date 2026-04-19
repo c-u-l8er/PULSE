@@ -29,7 +29,7 @@
  * License: MIT (Ampersand Box Design)
  */
 
-const VERSION = "0.3.0";
+const VERSION = "0.3.1";
 
 // Canonical URLs per property. The "href" is the destination used in cross-property
 // links; the "label" is what visitors see in the dropdown.
@@ -103,6 +103,18 @@ const LINKS = {
     tagline: "hello@ampersandboxdesign.com",
     href: "mailto:hello@ampersandboxdesign.com",
   },
+
+  // Playgrounds — live interactive surfaces
+  play_bendscript: {
+    label: "BendScript Playground",
+    tagline: "Live knowledge graph editor",
+    href: "https://bendscript.com/play",
+  },
+  play_ampersand: {
+    label: "[&] Protocol Playground",
+    tagline: "Browser-based manifest validator",
+    href: "https://ampersandboxdesign.com/playground",
+  },
 };
 
 // Map "property" attribute value to the category + item it lives in, for the
@@ -157,6 +169,11 @@ const CATEGORIES = [
     id: "company",
     label: "Company",
     items: ["home", "contact"],
+  },
+  {
+    id: "playground",
+    label: "Playground",
+    items: ["play_bendscript", "play_ampersand"],
   },
 ];
 
