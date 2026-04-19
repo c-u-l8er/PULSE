@@ -29,7 +29,7 @@
  * License: MIT (Ampersand Box Design)
  */
 
-const VERSION = "0.2.2";
+const VERSION = "0.3.0";
 
 // Canonical URLs per property. The "href" is the destination used in cross-property
 // links; the "label" is what visitors see in the dropdown.
@@ -128,6 +128,7 @@ const PROPERTY_MAP = {
   geofleetic: null,
   specprompt: null,
   ticktickclock: null,
+  webhost: null,
 };
 
 // Top-level structure. Order = display order.
@@ -584,9 +585,13 @@ class AmpNav extends HTMLElement {
     const h = AmpNav._heightForInject(this);
     const style = document.createElement("style");
     style.id = "amp-nav-host-styles";
+    const overlay = this.hasAttribute("overlay");
     style.textContent = `
       :root { --amp-nav-height: ${h}; }
-      body { padding-top: var(--amp-nav-height); }
+      ${overlay ? "" : "body { padding-top: var(--amp-nav-height); }"}
+      /* Honor the portfolio nav when the browser scrolls to anchors or
+         snap points — prevents anchor targets from landing behind the nav. */
+      html { scroll-padding-top: var(--amp-nav-height); }
       /* Offset the site's own fixed/sticky top nav so it sits below the portfolio nav.
          Applies to nav/header/banner whether nested or a direct body child.
          \`top\` is a no-op on non-positioned elements, so this is safe to broadcast. */
