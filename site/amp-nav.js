@@ -29,7 +29,7 @@
  * License: MIT (Ampersand Box Design)
  */
 
-const VERSION = "0.3.2";
+const VERSION = "0.3.3";
 
 // Canonical URLs per property. The "href" is the destination used in cross-property
 // links; the "label" is what visitors see in the dropdown.
@@ -113,7 +113,7 @@ const LINKS = {
   play_ampersand: {
     label: "[&] Protocol Playground",
     tagline: "Browser-based manifest validator",
-    href: "https://protocol.ampersandboxdesign.com/playground/",
+    href: "https://protocol.ampersandboxdesign.com/playground",
   },
 };
 
