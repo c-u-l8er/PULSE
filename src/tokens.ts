@@ -1,6 +1,7 @@
 /**
- * The five canonical PULSE cross-loop tokens and helpers for wrapping them
- * in CloudEvents v1.0 envelopes.
+ * The six canonical PULSE cross-loop tokens and helpers for wrapping them
+ * in CloudEvents v1.0 envelopes. SurpriseSignal added in PULSE v0.1.1 for OS-011
+ * (Embodiment Protocol) forward-model-prediction-error emission.
  */
 import { CloudEvent } from "cloudevents";
 import crypto from "node:crypto";
@@ -10,7 +11,8 @@ export type TokenKind =
   | "DeliberationResult"
   | "OutcomeSignal"
   | "ReputationUpdate"
-  | "ConsolidationEvent";
+  | "ConsolidationEvent"
+  | "SurpriseSignal";
 
 export const TOKEN_KINDS: readonly TokenKind[] = [
   "TopologyContext",
@@ -18,6 +20,7 @@ export const TOKEN_KINDS: readonly TokenKind[] = [
   "OutcomeSignal",
   "ReputationUpdate",
   "ConsolidationEvent",
+  "SurpriseSignal",
 ];
 
 export interface TopologyContextData {
@@ -55,12 +58,49 @@ export interface ConsolidationEventData {
   stats?: Record<string, number>;
 }
 
+/**
+ * SurpriseSignal — OS-011 Embodiment Protocol v0.1
+ *
+ * Emitted by a `&body.*` provider when an actual environment observation after
+ * `act()` diverges materially from the forward model's prediction. Consumed by
+ * `&memory.episodic` novelty detection, PRISM forward-model-calibration scoring,
+ * and FleetPrompt SkillCandidate confidence adjustment on cross-machine replay.
+ */
+export interface SurpriseSignalData {
+  /** ULID or UUID of the InteractionTrace this edge belongs to. */
+  trace_id: string;
+  /** Monotonic edge_id within the trace. */
+  edge_id: number;
+  /** Which &body.* subtype emitted. */
+  body_subtype: "browser" | "os" | "vision" | "voice" | "motor";
+  /** TypedAction.type that produced the surprise. */
+  action_type: string;
+  /** Forward-model predicted state hash (prefix like "sha256:..."). */
+  predicted_state_hash: string;
+  /** Observed state hash after act (prefix like "sha256:..."). */
+  actual_state_hash: string;
+  /** Normalized divergence magnitude in [0, 1]; 0=perfect prediction, 1=maximal. */
+  surprise_magnitude: number;
+  /** Controlled vocabulary describing the kind of divergence. */
+  surprise_kind:
+    | "unexpected_navigation"
+    | "unexpected_unchanged"
+    | "unexpected_structure"
+    | "unexpected_error"
+    | "unexpected_permission"
+    | "unexpected_latency"
+    | "other";
+  /** Subtype-specific evidence supporting the surprise classification. */
+  evidence?: unknown;
+}
+
 export type TokenData =
   | TopologyContextData
   | DeliberationResultData
   | OutcomeSignalData
   | ReputationUpdateData
-  | ConsolidationEventData;
+  | ConsolidationEventData
+  | SurpriseSignalData;
 
 const TYPE_PREFIX = "org.opensentience.pulse";
 

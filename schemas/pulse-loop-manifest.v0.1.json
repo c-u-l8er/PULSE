@@ -207,7 +207,8 @@
             "DeliberationResult",
             "OutcomeSignal",
             "ReputationUpdate",
-            "ConsolidationEvent"
+            "ConsolidationEvent",
+            "SurpriseSignal"
           ]
         },
         "to_loop":  { "type": "string" },

@@ -1,7 +1,7 @@
 {
   "name": "os-pulse",
-  "version": "0.1.0",
-  "description": "PULSE OS-010 reference MCP server — validates, registers, and routes PULSE loop manifests; emits CloudEvents v1 envelopes for the five canonical cross-loop tokens. One of four MCP servers in the [&] three-protocol stack (box-and-box, graphonomous, os-prism, os-pulse).",
+  "version": "0.1.1",
+  "description": "PULSE OS-010 reference MCP server — validates, registers, and routes PULSE loop manifests; emits CloudEvents v1 envelopes for the six canonical cross-loop tokens (TopologyContext, DeliberationResult, OutcomeSignal, ReputationUpdate, ConsolidationEvent, SurpriseSignal). SurpriseSignal added in v0.1.1 for OS-011 (Embodiment Protocol) support. One of four MCP servers in the [&] three-protocol stack (box-and-box, graphonomous, os-prism, os-pulse).",
   "license": "Apache-2.0",
   "author": "Ampersand Box Design <travis@ampersandboxdesign.com> (https://ampersandboxdesign.com)",
   "homepage": "https://opensentience.org/docs/spec/OS-010-PULSE-SPECIFICATION.md",
