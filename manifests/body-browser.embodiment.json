@@ -1,0 +1,119 @@
+{
+  "$schema": "https://opensentience.org/schemas/pulse-loop-manifest.v0.1.json",
+  "pulse_protocol_version": "0.1",
+
+  "loop_id": "body-browser.embodiment",
+  "loop_name": "Body-Browser Embodiment Loop",
+  "version": "0.1.0",
+  "owner": "ampersandboxdesign.com",
+  "workspace_scope": "required",
+
+  "description": "Per-interaction embodiment loop for OS-011 &body.browser: perceive the DOM/a11y state, enumerate policy-filtered affordances, execute one typed action, record the resulting TraceEdge, emit SurpriseSignal on forward-model prediction error. Each pass through the loop produces exactly one TraceEdge that feeds into &memory.episodic.store for procedural clustering and cross-machine replay.",
+
+  "phases": [
+    {
+      "id": "perceive",
+      "kind": "retrieve",
+      "description": "Capture the current browser state — URL, a11y tree with fresh @eN refs, viewport — as an EnvironmentObservation. Volatile fields (timestamps, cursor) are excluded from the replay-stable subset.",
+      "inputs":  { "from": "external", "schema": "PerceptionQuery" },
+      "outputs": { "to": "phase:affordances", "schema": "EnvironmentObservation" },
+      "idempotent": true,
+      "signature": "sha256(canonical_json({url, a11y_tree_structure, viewport_hash}))",
+      "timeout_ms": 2000,
+      "on_failure": "retry",
+      "max_retries": 2
+    },
+    {
+      "id": "affordances",
+      "kind": "route",
+      "description": "Enumerate the typed actions currently do-able, run each through the governance policy (&govern.identity), partition into allowed vs policy_filtered_out.",
+      "inputs":  { "from": "phase:perceive", "schema": "EnvironmentObservation" },
+      "outputs": { "to": "phase:act", "schema": "AffordanceSet" },
+      "idempotent": true,
+      "invariant": "policy_filtered_affordances"
+    },
+    {
+      "id": "act",
+      "kind": "act",
+      "description": "Execute exactly one TypedAction. Invariants: I1 perceive-before-act (stale refs rejected), I2 affordance-bounded (action must appear in the AffordanceSet), destructive actions require a fresh authorization block per OS-011 §4.4.",
+      "inputs":  { "from": "phase:affordances", "schema": "TypedAction" },
+      "outputs": { "to": "phase:learn", "schema": "ActionOutcome" },
+      "idempotent": false,
+      "invariant": "affordance_bounded_action",
+      "timeout_ms": 30000
+    },
+    {
+      "id": "learn",
+      "kind": "learn",
+      "description": "Assemble the TraceEdge (state_before, typed_action, state_after, latency, outcome_status, provenance). If the forward-model prediction (from dry_run) diverged from the observed state_after, emit a SurpriseSignal.",
+      "inputs":  { "from": "phase:act", "schema": "ActionOutcome" },
+      "outputs": [
+        { "to": "loop:graphonomous.continual_learning", "token": "InteractionTrace" },
+        { "to": "loop:graphonomous.continual_learning", "token": "SurpriseSignal" }
+      ],
+      "idempotent": true
+    },
+    {
+      "id": "consolidate",
+      "kind": "consolidate",
+      "description": "Finalize the trace at session end: stamp ended_at + outcome, submit to &memory.episodic.store (e.g. Graphonomous act(store_trace)). Clustered matching state_hash prefixes become procedural knowledge.",
+      "inputs":  { "from": "phase:learn", "schema": "TraceBatch" },
+      "outputs": { "to": "substrate:graphonomous", "schema": "StoreTraceRequest" },
+      "idempotent": true
+    }
+  ],
+
+  "substrates": [
+    {
+      "name": "chromium",
+      "kind": "browser",
+      "transport": "cdp",
+      "note": "Chromium via the agent-browser CLI. Any CDP-compatible runtime works; the Simulator backend swaps this out for deterministic fixtures."
+    },
+    {
+      "name": "graphonomous",
+      "kind": "mcp",
+      "transport": "http",
+      "endpoint": "http://graphonomous-mcp.fly.dev/mcp",
+      "note": "Accepts act(action: store_trace) and retrieve(action: replay)."
+    }
+  ],
+
+  "cross_loop_signals": {
+    "emits": [
+      {
+        "token": "InteractionTrace",
+        "to": "loop:graphonomous.continual_learning",
+        "cadence": "per-interaction"
+      },
+      {
+        "token": "SurpriseSignal",
+        "to": "loop:graphonomous.continual_learning",
+        "cadence": "on-forward-model-mismatch",
+        "pulse_version": "0.1.1"
+      }
+    ],
+    "consumes": [
+      {
+        "token": "InteractionTrace",
+        "from": "loop:graphonomous.continual_learning",
+        "note": "Replay payload returned by retrieve(action: replay)."
+      }
+    ]
+  },
+
+  "reference_implementations": [
+    {
+      "name": "body-browser (Simulator backend)",
+      "path": "body-browser/",
+      "status": "conforming",
+      "conformance": "OS-011 v0.1 §9 — 12/12 tests pass against BodyBrowser.Backend.Simulator"
+    },
+    {
+      "name": "body-browser (AgentBrowser backend)",
+      "path": "body-browser/lib/body_browser/backend/agent_browser.ex",
+      "status": "skeleton",
+      "note": "Subprocess adapter over the agent-browser CLI; interface documented, wiring pending."
+    }
+  ]
+}

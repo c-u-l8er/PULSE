@@ -1,0 +1,112 @@
+{
+  "$schema": "https://opensentience.org/schemas/pulse-loop-manifest.v0.1.json",
+  "pulse_protocol_version": "0.1",
+
+  "loop_id": "body-os.embodiment",
+  "loop_name": "Body-OS Embodiment Loop",
+  "version": "0.1.0",
+  "owner": "ampersandboxdesign.com",
+  "workspace_scope": "required",
+
+  "description": "Per-interaction embodiment loop for OS-011 &body.os: perceive the host state (cwd, env, fs snapshot, process list), enumerate policy-filtered affordances, execute one typed action (shell_exec, file_write, file_delete, process_spawn, process_signal, etc.) with destructive-edge authorization, record the resulting TraceEdge, emit SurpriseSignal on forward-model prediction error. Every destructive edge MUST carry a fresh authorization block at both record and replay time (OS-011 §4.4).",
+
+  "phases": [
+    {
+      "id": "perceive",
+      "kind": "retrieve",
+      "description": "Capture the current OS state — cwd, env summary, filesystem entries with content hashes, process list — as an EnvironmentObservation. Volatile fields (perceived_at, raw pids, cursor state) are excluded from the replay-stable subset.",
+      "inputs":  { "from": "external", "schema": "PerceptionQuery" },
+      "outputs": { "to": "phase:affordances", "schema": "EnvironmentObservation" },
+      "idempotent": true,
+      "signature": "sha256(canonical_json({cwd, env_summary, fs_snapshot_hash, process_list_hash}))",
+      "timeout_ms": 2000,
+      "on_failure": "retry",
+      "max_retries": 2
+    },
+    {
+      "id": "affordances",
+      "kind": "route",
+      "description": "Enumerate typed actions currently do-able, run each through &govern.identity policy, partition into allowed vs policy_filtered_out. Most OS actions are destructive; non-destructive actions are limited to file_read and screen_capture.",
+      "inputs":  { "from": "phase:perceive", "schema": "EnvironmentObservation" },
+      "outputs": { "to": "phase:act", "schema": "AffordanceSet" },
+      "idempotent": true,
+      "invariant": "policy_filtered_affordances"
+    },
+    {
+      "id": "act",
+      "kind": "act",
+      "description": "Execute exactly one TypedAction. Invariants: I1 perceive-before-act, I2 affordance-bounded, I4 deterministic state encoding. Destructive actions (shell_exec, file_write, file_edit, file_delete, keyboard_input, mouse_click, mouse_drag, process_spawn, process_signal) require a fresh authorization block per OS-011 §4.4.",
+      "inputs":  { "from": "phase:affordances", "schema": "TypedAction" },
+      "outputs": { "to": "phase:learn", "schema": "ActionOutcome" },
+      "idempotent": false,
+      "invariant": "destructive_action_authorization_required",
+      "timeout_ms": 30000
+    },
+    {
+      "id": "learn",
+      "kind": "learn",
+      "description": "Assemble the TraceEdge with full provenance (capability: &body.os). Emit SurpriseSignal if the forward-model prediction diverged from the observed state_after.",
+      "inputs":  { "from": "phase:act", "schema": "ActionOutcome" },
+      "outputs": [
+        { "to": "loop:graphonomous.continual_learning", "token": "InteractionTrace" },
+        { "to": "loop:graphonomous.continual_learning", "token": "SurpriseSignal" }
+      ],
+      "idempotent": true
+    },
+    {
+      "id": "consolidate",
+      "kind": "consolidate",
+      "description": "Finalize the trace at session end, submit to &memory.episodic.store. Successful traces become candidates for crystallization into FleetPrompt SkillCandidates (see fleet.skill_crystallizations).",
+      "inputs":  { "from": "phase:learn", "schema": "TraceBatch" },
+      "outputs": { "to": "substrate:graphonomous", "schema": "StoreTraceRequest" },
+      "idempotent": true
+    }
+  ],
+
+  "substrates": [
+    {
+      "name": "host_os",
+      "kind": "operating_system",
+      "transport": "subprocess",
+      "note": "Typically driven via Claude Computer Use or OpenClaw. Sandbox (containers, jails, restricted fs) is strongly recommended. The Simulator backend swaps this out for deterministic fixtures."
+    },
+    {
+      "name": "graphonomous",
+      "kind": "mcp",
+      "transport": "http",
+      "endpoint": "http://graphonomous-mcp.fly.dev/mcp",
+      "note": "Consumes traces via act(action: store_trace)."
+    },
+    {
+      "name": "delegatic",
+      "kind": "authorization",
+      "note": "Issues fresh authorization blocks for destructive edges. Required for every replay of a destructive action — OS-011 §4.4 prohibits prior-authorization carry."
+    }
+  ],
+
+  "cross_loop_signals": {
+    "emits": [
+      { "token": "InteractionTrace", "to": "loop:graphonomous.continual_learning", "cadence": "per-interaction" },
+      { "token": "SurpriseSignal", "to": "loop:graphonomous.continual_learning", "cadence": "on-forward-model-mismatch", "pulse_version": "0.1.1" }
+    ],
+    "consumes": [
+      { "token": "InteractionTrace", "from": "loop:graphonomous.continual_learning", "note": "Replay payload returned by retrieve(action: replay)." },
+      { "token": "AuthorizationBlock", "from": "loop:delegatic", "note": "Fresh authorization issued per destructive replay edge." }
+    ]
+  },
+
+  "reference_implementations": [
+    {
+      "name": "body-os (Simulator backend)",
+      "path": "body-os/",
+      "status": "conforming",
+      "conformance": "OS-011 v0.1 §9 — 12/12 tests pass against BodyOs.Backend.Simulator"
+    },
+    {
+      "name": "body-os (ComputerUse backend)",
+      "path": "body-os/lib/body_os/backend/computer_use.ex",
+      "status": "skeleton",
+      "note": "Adapter shell for Claude Computer Use / OpenClaw; subprocess wiring pending."
+    }
+  ]
+}
