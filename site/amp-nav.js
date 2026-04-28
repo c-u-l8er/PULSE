@@ -29,21 +29,103 @@
  * License: MIT (Ampersand Box Design)
  */
 
-const VERSION = "0.3.3";
+const VERSION = "0.4.0";
 
 // Canonical URLs per property. The "href" is the destination used in cross-property
 // links; the "label" is what visitors see in the dropdown.
+//
+// Ecosystem products carry a {status, tier} pair (status = display string,
+// tier = one of "shipped" | "alpha" | "spec") so the Compose menu can show
+// honest version/maturity at-a-glance. Source of truth: STACK_COMPLETION.md.
 const LINKS = {
-  // Products
+  // Cognitive Primitives — memory / knowledge / reasoning / time / space
   graphonomous: {
     label: "Graphonomous",
     tagline: "Agent memory substrate",
     href: "https://graphonomous.com",
+    status: "v0.4.3",
+    tier: "shipped",
   },
+  bendscript: {
+    label: "BendScript",
+    tagline: "Graph-first document protocol",
+    href: "https://bendscript.com",
+    status: "v0.1.0-alpha",
+    tier: "alpha",
+  },
+  deliberatic: {
+    label: "Deliberatic",
+    tagline: "Argumentation protocol",
+    href: "https://deliberatic.com",
+    status: "spec only",
+    tier: "spec",
+  },
+  ticktickclock: {
+    label: "TickTickClock",
+    tagline: "Temporal intelligence",
+    href: "https://ticktickclock.com",
+    status: "spec only",
+    tier: "spec",
+  },
+  geofleetic: {
+    label: "GeoFleetic",
+    tagline: "Spatial intelligence",
+    href: "https://geofleetic.com",
+    status: "spec only",
+    tier: "spec",
+  },
+
+  // Agent Platform — building, governance, marketplace, spec discipline
+  agentelic: {
+    label: "Agentelic",
+    tagline: "Premium agent builder",
+    href: "https://agentelic.com",
+    status: "v0.1.0",
+    tier: "shipped",
+  },
+  fleetprompt: {
+    label: "FleetPrompt",
+    tagline: "Agent marketplace + trust",
+    href: "https://fleetprompt.com",
+    status: "v0.1.0",
+    tier: "shipped",
+  },
+  specprompt: {
+    label: "SpecPrompt",
+    tagline: "Spec-driven dev standard",
+    href: "https://specprompt.com",
+    status: "v0.1.0",
+    tier: "shipped",
+  },
+  delegatic: {
+    label: "Delegatic",
+    tagline: "Agent governance kernel",
+    href: "https://delegatic.com",
+    status: "v0.1.0",
+    tier: "shipped",
+  },
+  agentromatic: {
+    label: "AgenTroMatic",
+    tagline: "Deliberation orchestrator",
+    href: "https://agentromatic.com",
+    status: "spec only",
+    tier: "spec",
+  },
+
+  // Runtime — execution, layout, hosting
   runefort: {
     label: "RuneFort",
-    tagline: "Spatial control plane",
+    tagline: "Layout protocol & control plane",
     href: "https://runefort.com",
+    status: "v0.1.0-alpha",
+    tier: "alpha",
+  },
+  webhost: {
+    label: "WebHost.Systems",
+    tagline: "Hosting + Supabase dashboard",
+    href: "https://webhost.systems",
+    status: "in dev",
+    tier: "alpha",
   },
 
   // Protocols — the three-protocol stack ([&] + PULSE + PRISM)
@@ -63,11 +145,13 @@ const LINKS = {
     href: "https://prism.opensentience.org",
   },
 
-  // Research
+  // Research / Runtime — OS-001..011 protocol family
   opensentience: {
     label: "OpenSentience",
-    tagline: "10 open research protocols",
-    href: "https://opensentience.org/#protocols",
+    tagline: "11 open research protocols",
+    href: "https://opensentience.org",
+    status: "11 protocols",
+    tier: "shipped",
   },
   kappa: {
     label: "κ-Routing proof",
@@ -103,26 +187,29 @@ const LINKS = {
     tagline: "hello@ampersandboxdesign.com",
     href: "mailto:hello@ampersandboxdesign.com",
   },
-
-  // Playgrounds — live interactive surfaces
-  play_bendscript: {
-    label: "BendScript Playground",
-    tagline: "Live knowledge graph editor",
-    href: "https://bendscript.com/play",
-  },
-  play_ampersand: {
-    label: "[&] Protocol Playground",
-    tagline: "Browser-based manifest validator",
-    href: "https://protocol.ampersandboxdesign.com/playground",
-  },
 };
 
 // Map "property" attribute value to the category + item it lives in, for the
 // "you are here" highlight. Properties not in this map still render the nav
 // (no highlight). Internal aliases ("ampersandboxdesign" → "home") are fine.
 const PROPERTY_MAP = {
+  // Hero products — appear in the Products dropdown
   graphonomous: { category: "products", item: "graphonomous" },
+  bendscript: { category: "products", item: "bendscript" },
   runefort: { category: "products", item: "runefort" },
+  // Compose — Cognitive Primitives column
+  deliberatic: { category: "compose", item: "deliberatic" },
+  ticktickclock: { category: "compose", item: "ticktickclock" },
+  geofleetic: { category: "compose", item: "geofleetic" },
+  // Compose — Agent Platform column
+  agentelic: { category: "compose", item: "agentelic" },
+  fleetprompt: { category: "compose", item: "fleetprompt" },
+  specprompt: { category: "compose", item: "specprompt" },
+  delegatic: { category: "compose", item: "delegatic" },
+  agentromatic: { category: "compose", item: "agentromatic" },
+  // Compose — Runtime column
+  webhost: { category: "compose", item: "webhost" },
+  // Other categories
   ampersand: { category: "protocols", item: "ampersand" },
   ampersandboxdesign: { category: "company", item: "home" },
   pulse: { category: "protocols", item: "pulse" },
@@ -130,25 +217,19 @@ const PROPERTY_MAP = {
   opensentience: { category: "research", item: "opensentience" },
   kappa: { category: "research", item: "kappa" },
   docs: { category: "docs", item: null },
-  // Non-hero sites — nav still shows, no highlight
-  agentelic: null,
-  agentromatic: null,
-  bendscript: null,
-  delegatic: null,
-  deliberatic: null,
-  fleetprompt: null,
-  geofleetic: null,
-  specprompt: null,
-  ticktickclock: null,
-  webhost: null,
 };
 
 // Top-level structure. Order = display order.
+//
+// A category may be either flat (one column, `items: [...]`) or a mega-menu
+// (multiple columns, `mega: true, columns: [{label, items}, ...]`). The mega
+// shape is used by Compose to lay out the full ecosystem product catalog
+// across the three architectural layers.
 const CATEGORIES = [
   {
     id: "products",
     label: "Products",
-    items: ["graphonomous", "runefort"],
+    items: ["graphonomous", "bendscript", "runefort"],
   },
   {
     id: "protocols",
@@ -171,9 +252,34 @@ const CATEGORIES = [
     items: ["home", "contact"],
   },
   {
-    id: "playground",
-    label: "Playground",
-    items: ["play_bendscript", "play_ampersand"],
+    id: "compose",
+    label: "Compose",
+    mega: true,
+    columns: [
+      {
+        label: "Cognitive Primitives",
+        items: [
+          "graphonomous",
+          "deliberatic",
+          "ticktickclock",
+          "geofleetic",
+        ],
+      },
+      {
+        label: "Agent Platform",
+        items: [
+          "agentelic",
+          "fleetprompt",
+          "specprompt",
+          "delegatic",
+          "agentromatic",
+        ],
+      },
+      {
+        label: "Runtime",
+        items: ["opensentience", "webhost"],
+      },
+    ],
   },
 ];
 
@@ -364,6 +470,100 @@ const STYLE = /* css */ `
     letter-spacing: 0;
   }
 
+  /* Mega dropdown — multi-column layout for the Compose catalog */
+  .dropdown.mega {
+    flex-direction: row;
+    gap: 1.25rem;
+    padding: 1rem;
+    /* Center under the Compose button so the wide menu stays on-screen */
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 760px;
+  }
+
+  .dropdown.mega .col {
+    flex: 1 1 240px;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .dropdown.mega .col h4 {
+    margin: 0 0 0.4rem 0;
+    padding: 0 0.75rem;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--amp-nav-muted);
+  }
+
+  /* Status pill — version / "spec only" / "in dev" */
+  .dropdown a .label-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .dropdown .status {
+    display: inline-block;
+    font-size: 10px;
+    line-height: 1;
+    padding: 2px 6px;
+    border: 1px solid var(--amp-nav-border);
+    border-radius: 999px;
+    color: var(--amp-nav-muted);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .dropdown .status[data-tier="shipped"] {
+    color: var(--amp-nav-accent);
+    border-color: color-mix(in srgb, var(--amp-nav-accent) 35%, transparent);
+  }
+
+  .dropdown .status[data-tier="alpha"] {
+    color: #f5c66a;
+    border-color: rgba(245, 198, 106, 0.4);
+  }
+
+  .dropdown .status[data-tier="spec"] {
+    color: var(--amp-nav-muted);
+    opacity: 0.85;
+  }
+
+  /* Mobile mirrors of the same status pill */
+  .mobile-section .status {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 10px;
+    line-height: 1;
+    padding: 2px 6px;
+    border: 1px solid var(--amp-nav-border);
+    border-radius: 999px;
+    color: var(--amp-nav-muted);
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+  }
+  .mobile-section .status[data-tier="shipped"] {
+    color: var(--amp-nav-accent);
+    border-color: color-mix(in srgb, var(--amp-nav-accent) 35%, transparent);
+  }
+  .mobile-section .status[data-tier="alpha"] {
+    color: #f5c66a;
+    border-color: rgba(245, 198, 106, 0.4);
+  }
+  .mobile-section .col-label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--amp-nav-muted);
+    margin: 0.6rem 0 0.25rem 0;
+  }
+
   .spacer {
     flex: 1;
   }
@@ -495,13 +695,21 @@ const TEMPLATE = (property) => {
   const currentCategory = highlight?.category ?? null;
   const currentItem = highlight?.item ?? null;
 
+  const escapeAttr = (s) => String(s).replace(/"/g, "&quot;");
+
+  const renderStatus = (link) =>
+    link.status
+      ? `<span class="status" data-tier="${escapeAttr(link.tier ?? "spec")}">${link.status}</span>`
+      : "";
+
   const renderItem = (key) => {
     const link = LINKS[key];
     if (!link) return "";
     const isCurrent = key === currentItem;
+    const status = renderStatus(link);
     return `
       <a href="${link.href}" ${isCurrent ? 'aria-current="true"' : ""} data-key="${key}">
-        <span>${link.label}</span>
+        <span class="label-row"><span>${link.label}</span>${status}</span>
         ${link.tagline ? `<span class="tagline">${link.tagline}</span>` : ""}
       </a>
     `;
@@ -509,6 +717,19 @@ const TEMPLATE = (property) => {
 
   const renderCategory = (cat) => {
     const isCurrent = cat.id === currentCategory;
+    const dropdownInner = cat.mega
+      ? cat.columns
+          .map(
+            (col) => `
+        <div class="col">
+          <h4>${col.label}</h4>
+          ${col.items.map(renderItem).join("")}
+        </div>
+      `,
+          )
+          .join("")
+      : cat.items.map(renderItem).join("");
+    const dropdownClass = cat.mega ? "dropdown mega" : "dropdown";
     return `
       <div class="item" data-category="${cat.id}" ${isCurrent ? 'aria-current="true"' : ""}>
         <button type="button" aria-haspopup="true" aria-expanded="false">
@@ -517,31 +738,46 @@ const TEMPLATE = (property) => {
             <path d="M1.5 3.5 L5 7 L8.5 3.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
-        <div class="dropdown" role="menu">
-          ${cat.items.map(renderItem).join("")}
+        <div class="${dropdownClass}" role="menu">
+          ${dropdownInner}
         </div>
       </div>
     `;
   };
 
-  const mobileSection = (cat) => `
-    <div class="mobile-section">
-      <h3>${cat.label}</h3>
-      ${cat.items
-        .map((key) => {
-          const link = LINKS[key];
-          if (!link) return "";
-          const isCurrent = key === currentItem;
-          return `
-            <a href="${link.href}" ${isCurrent ? 'aria-current="true"' : ""}>
-              ${link.label}
-              ${link.tagline ? `<span class="tagline">${link.tagline}</span>` : ""}
-            </a>
-          `;
-        })
-        .join("")}
-    </div>
-  `;
+  const renderMobileLink = (key) => {
+    const link = LINKS[key];
+    if (!link) return "";
+    const isCurrent = key === currentItem;
+    const status = link.status
+      ? `<span class="status" data-tier="${escapeAttr(link.tier ?? "spec")}">${link.status}</span>`
+      : "";
+    return `
+      <a href="${link.href}" ${isCurrent ? 'aria-current="true"' : ""}>
+        ${link.label}${status}
+        ${link.tagline ? `<span class="tagline">${link.tagline}</span>` : ""}
+      </a>
+    `;
+  };
+
+  const mobileSection = (cat) => {
+    const body = cat.mega
+      ? cat.columns
+          .map(
+            (col) => `
+        <span class="col-label">${col.label}</span>
+        ${col.items.map(renderMobileLink).join("")}
+      `,
+          )
+          .join("")
+      : cat.items.map(renderMobileLink).join("");
+    return `
+      <div class="mobile-section">
+        <h3>${cat.label}</h3>
+        ${body}
+      </div>
+    `;
+  };
 
   return `
     <style>${STYLE}</style>
