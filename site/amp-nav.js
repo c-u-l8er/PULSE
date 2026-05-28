@@ -8,7 +8,9 @@
  * Attributes:
  *   property   — one of the canonical property ids (see PROPERTY_MAP below).
  *                Drives the "you are here" highlight. Omit if none apply.
- *   theme      — "dark" (default) | "light" | "auto"
+ *   theme      — "dark" (default) | "light" | "warrant" | "auto"
+ *                "warrant" is the legal-vellum (dark) house style for
+ *                topology-as-warrant.html — dark ink bg, parchment text, gold accent.
  *   base       — optional override for the portfolio origin used in menu links
  *                (e.g. "https://ampersandboxdesign.com"). Defaults to the link
  *                targets defined in LINKS.
@@ -29,7 +31,7 @@
  * License: MIT (Ampersand Box Design)
  */
 
-const VERSION = "0.4.0";
+const VERSION = "0.6.7";
 
 // Canonical URLs per property. The "href" is the destination used in cross-property
 // links; the "label" is what visitors see in the dropdown.
@@ -128,6 +130,22 @@ const LINKS = {
     tier: "alpha",
   },
 
+  // Academy — the institutional loop: systems that teach & prove cognition
+  workbench: {
+    label: "Workbench",
+    tagline: "Skill workshop + 6-gate proof harness",
+    href: "https://workbench.opensentience.org",
+    status: "v0.3.0-alpha",
+    tier: "alpha",
+  },
+  supervisor: {
+    label: "Supervisor",
+    tagline: "Teacher loop — invariant curricula",
+    href: "https://opensentience.org/supervisor.html",
+    status: "spec",
+    tier: "spec",
+  },
+
   // Protocols — the three-protocol stack ([&] + PULSE + PRISM)
   ampersand: {
     label: "[&] Protocol",
@@ -144,6 +162,18 @@ const LINKS = {
     tagline: "Adversarial evaluation discipline",
     href: "https://prism.opensentience.org",
   },
+  scope: {
+    label: "SCOPE",
+    tagline: "Spatial algebra — regions + claims",
+    href: "https://opensentience.org/scope.html",
+    status: "v0.1 draft",
+    tier: "spec",
+  },
+  invariant_arithmetic: {
+    label: "Invariant Arithmetic",
+    tagline: "The algebra under the proofs",
+    href: "https://opensentience.org/invariant-arithmetic.html",
+  },
 
   // Research / Runtime — OS-001..011 protocol family
   opensentience: {
@@ -157,6 +187,49 @@ const LINKS = {
     label: "κ-Routing proof",
     tagline: "Topology determines deliberation",
     href: "https://opensentience.org/#kappa",
+  },
+
+  // Research — the Periodic Table of Agent Invariants + per-invariant proofs.
+  // Only the six PROVED invariants get a proof page; the table holds all 43.
+  invariants: {
+    label: "Periodic Table of Invariants",
+    tagline: "43 agent invariants, by family",
+    href: "https://opensentience.org/invariants.html",
+  },
+  topology_warrant: {
+    label: "Topology as Warrant",
+    tagline: "Structure earns the right to act",
+    href: "https://opensentience.org/topology-as-warrant.html",
+  },
+  proof_kappa: {
+    label: "κ — Cyclicity",
+    tagline: "Proved · 1.9M systems, machine-checked",
+    href: "https://opensentience.org/proofs/kappa.html",
+  },
+  proof_phase: {
+    label: "π — Phase ordering",
+    tagline: "Proved · property-tested",
+    href: "https://opensentience.org/proofs/phase-ordering.html",
+  },
+  proof_nocycles: {
+    label: "⊘ — No cycles in authority",
+    tagline: "Proved · Delegatic kernel",
+    href: "https://opensentience.org/proofs/no-cycles.html",
+  },
+  proof_monotonic: {
+    label: "⊆ — Monotonic inheritance",
+    tagline: "Proved · Delegatic kernel",
+    href: "https://opensentience.org/proofs/monotonic-inheritance.html",
+  },
+  proof_deny: {
+    label: "⊥ — Deny by default",
+    tagline: "Proved · Delegatic kernel",
+    href: "https://opensentience.org/proofs/deny-default.html",
+  },
+  proof_append: {
+    label: "⊕ — Append-only audit",
+    tagline: "Proved · Delegatic kernel",
+    href: "https://opensentience.org/proofs/append-only.html",
   },
 
   // Docs — three docs subdomains
@@ -209,13 +282,26 @@ const PROPERTY_MAP = {
   agentromatic: { category: "compose", item: "agentromatic" },
   // Compose — Runtime column
   webhost: { category: "compose", item: "webhost" },
+  // Academy — institutional loop
+  workbench: { category: "academy", item: "workbench" },
+  supervisor: { category: "academy", item: "supervisor" },
   // Other categories
   ampersand: { category: "protocols", item: "ampersand" },
   ampersandboxdesign: { category: "company", item: "home" },
   pulse: { category: "protocols", item: "pulse" },
   prism: { category: "protocols", item: "prism" },
+  scope: { category: "protocols", item: "scope" },
+  invariant_arithmetic: { category: "protocols", item: "invariant_arithmetic" },
   opensentience: { category: "research", item: "opensentience" },
   kappa: { category: "research", item: "kappa" },
+  invariants: { category: "research", item: "invariants" },
+  topology_warrant: { category: "research", item: "topology_warrant" },
+  proof_kappa: { category: "research", item: "proof_kappa" },
+  proof_phase: { category: "research", item: "proof_phase" },
+  proof_nocycles: { category: "research", item: "proof_nocycles" },
+  proof_monotonic: { category: "research", item: "proof_monotonic" },
+  proof_deny: { category: "research", item: "proof_deny" },
+  proof_append: { category: "research", item: "proof_append" },
   docs: { category: "docs", item: null },
 };
 
@@ -234,12 +320,34 @@ const CATEGORIES = [
   {
     id: "protocols",
     label: "Protocols",
-    items: ["ampersand", "pulse", "prism"],
+    items: ["ampersand", "pulse", "prism", "scope", "invariant_arithmetic"],
   },
   {
     id: "research",
     label: "Research",
-    items: ["opensentience", "kappa"],
+    mega: true,
+    columns: [
+      {
+        label: "Protocols & Census",
+        items: ["opensentience", "invariants", "topology_warrant"],
+      },
+      {
+        label: "Proven Invariants",
+        items: [
+          "proof_kappa",
+          "proof_phase",
+          "proof_nocycles",
+          "proof_monotonic",
+          "proof_deny",
+          "proof_append",
+        ],
+      },
+    ],
+  },
+  {
+    id: "academy",
+    label: "Academy",
+    items: ["workbench", "supervisor"],
   },
   {
     id: "docs",
@@ -325,6 +433,21 @@ const STYLE = /* css */ `
     --amp-nav-hover: rgba(0, 0, 0, 0.04);
     --amp-nav-cta-bg: #08090c;
     --amp-nav-cta-fg: #f5f5f0;
+  }
+
+  /* Topology-as-Warrant "legal vellum" house style: dark ink ground, warm
+     parchment type, a single gold accent. Matches
+     opensentience.org/topology-as-warrant.html so the nav reads as the top
+     edge of the sealed document, not a separate chrome bar. */
+  :host([theme="warrant"]) {
+    --amp-nav-bg: rgba(22, 19, 16, 0.9);
+    --amp-nav-fg: #e8e2d2;
+    --amp-nav-muted: #8c8472;
+    --amp-nav-accent: #c9a24b;
+    --amp-nav-border: rgba(232, 226, 210, 0.12);
+    --amp-nav-hover: rgba(232, 226, 210, 0.06);
+    --amp-nav-cta-bg: #c9a24b;
+    --amp-nav-cta-fg: #161310;
   }
 
   .bar {
@@ -825,12 +948,9 @@ class AmpNav extends HTMLElement {
 
   /**
    * Inject a one-time <style> element into the host document so page content
-   * and any existing fixed site nav sit below the portfolio nav.
-   *
-   * The selectors target common top-fixed nav patterns (direct-child <nav>
-   * and <header> of <body>). A site can opt out by setting
-   *   amp-nav { --amp-nav-push-site-nav: 0; }
-   * which will make --amp-nav-height resolve to 0 for the offset rule.
+   * sits below the portfolio nav (body padding + anchor scroll-padding).
+   * Offsetting the host's own fixed/sticky nav is handled separately in
+   * _offsetHostFixedNavs() so we don't disturb non-fixed positioned headers.
    */
   _injectHostStyles() {
     if (typeof document === "undefined") return;
@@ -845,19 +965,39 @@ class AmpNav extends HTMLElement {
       /* Honor the portfolio nav when the browser scrolls to anchors or
          snap points — prevents anchor targets from landing behind the nav. */
       html { scroll-padding-top: var(--amp-nav-height); }
-      /* Offset the site's own fixed/sticky top nav so it sits below the portfolio nav.
-         Applies to nav/header/banner whether nested or a direct body child.
-         \`top\` is a no-op on non-positioned elements, so this is safe to broadcast. */
-      body nav,
-      body header,
-      body [role="banner"],
-      body .site-nav,
-      body .navbar,
-      body .topbar {
-        top: var(--amp-nav-height) !important;
-      }
     `;
     document.head.appendChild(style);
+    // Offset the site's OWN fixed/sticky top nav so it sits below the portfolio
+    // nav. This is done in JS (not a broadcast CSS rule) because `top` is only a
+    // no-op on static elements — on `position: relative`/`absolute` content it
+    // shifts the element out of place. We therefore only touch elements whose
+    // computed position is actually `fixed` or `sticky`.
+    this._offsetHostFixedNavs();
+  }
+
+  /**
+   * Push the host site's own fixed/sticky top nav below the portfolio nav.
+   * Only elements that are genuinely fixed or sticky are offset, so we never
+   * disturb relatively/absolutely positioned headers that are page content.
+   * Runs once on connect plus a couple of deferred passes to catch navs that
+   * mount slightly after the portfolio nav.
+   */
+  _offsetHostFixedNavs() {
+    if (typeof document === "undefined") return;
+    const SEL =
+      'body nav, body header, body [role="banner"], body .site-nav, body .navbar, body .topbar';
+    const apply = () => {
+      document.querySelectorAll(SEL).forEach((el) => {
+        if (el.tagName === "AMP-NAV" || el.closest("amp-nav")) return;
+        const pos = getComputedStyle(el).position;
+        if (pos === "fixed" || pos === "sticky") {
+          el.style.top = "var(--amp-nav-height)";
+        }
+      });
+    };
+    apply();
+    requestAnimationFrame(apply);
+    setTimeout(apply, 500);
   }
 
   static _heightForInject(el) {
