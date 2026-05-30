@@ -31,7 +31,7 @@
  * License: MIT (Ampersand Box Design)
  */
 
-const VERSION = "0.6.7";
+const VERSION = "0.7.0";
 
 // Canonical URLs per property. The "href" is the destination used in cross-property
 // links; the "label" is what visitors see in the dropdown.
@@ -171,8 +171,58 @@ const LINKS = {
   },
   invariant_arithmetic: {
     label: "Invariant Arithmetic",
-    tagline: "The algebra under the proofs",
+    tagline: "Rungs 1–2 (alethic · axiological)",
     href: "https://opensentience.org/invariant-arithmetic.html",
+  },
+
+  // The arithmetic ladder — box-and-box governance kernel (8 rungs, one bridge,
+  // 97 property-tested laws) + the six living-paper rung pages + playground + laws.
+  box_and_box: {
+    label: "box-and-box",
+    tagline: "The governance kernel · 8 rungs · 97 laws",
+    href: "https://ampersandboxdesign.com",
+    status: "v0.8.0",
+    tier: "shipped",
+  },
+  laws: {
+    label: "The 97 laws",
+    tagline: "Conformance — every law, live",
+    href: "https://ampersandboxdesign.com/laws.html",
+  },
+  arith_deontic: {
+    label: "Deontic Arithmetic",
+    tagline: "Rung 3 — what's allowed (norms ▸ certificate)",
+    href: "https://opensentience.org/deontic-arithmetic.html",
+  },
+  arith_temporal: {
+    label: "Temporal Arithmetic",
+    tagline: "Rung 4 — safe over time (LTL ▸ supervise)",
+    href: "https://opensentience.org/temporal-arithmetic.html",
+  },
+  arith_reflexive: {
+    label: "Reflexive Arithmetic",
+    tagline: "Rung 5 — may the rules change (entrenched core)",
+    href: "https://opensentience.org/reflexive-arithmetic.html",
+  },
+  arith_epistemic: {
+    label: "Epistemic Arithmetic",
+    tagline: "Rung 6 — do we know enough (knows ▸ believes)",
+    href: "https://opensentience.org/epistemic-arithmetic.html",
+  },
+  arith_strategic: {
+    label: "Strategic Arithmetic",
+    tagline: "Rung 7 — who can ensure it (coalition power)",
+    href: "https://opensentience.org/strategic-arithmetic.html",
+  },
+  arith_resource: {
+    label: "Resource Arithmetic",
+    tagline: "Rung 8 — can we afford it (affine ledger)",
+    href: "https://opensentience.org/resource-arithmetic.html",
+  },
+  arith_playground: {
+    label: "Playground",
+    tagline: "Interactive law sandbox · 64 of 97 live",
+    href: "https://opensentience.org/playground.html",
   },
 
   // Research / Runtime — OS-001..011 protocol family
@@ -291,7 +341,16 @@ const PROPERTY_MAP = {
   pulse: { category: "protocols", item: "pulse" },
   prism: { category: "protocols", item: "prism" },
   scope: { category: "protocols", item: "scope" },
-  invariant_arithmetic: { category: "protocols", item: "invariant_arithmetic" },
+  invariant_arithmetic: { category: "research", item: "invariant_arithmetic" },
+  box_and_box: { category: "research", item: "box_and_box" },
+  laws: { category: "research", item: "laws" },
+  arith_deontic: { category: "research", item: "arith_deontic" },
+  arith_temporal: { category: "research", item: "arith_temporal" },
+  arith_reflexive: { category: "research", item: "arith_reflexive" },
+  arith_epistemic: { category: "research", item: "arith_epistemic" },
+  arith_strategic: { category: "research", item: "arith_strategic" },
+  arith_resource: { category: "research", item: "arith_resource" },
+  arith_playground: { category: "research", item: "arith_playground" },
   opensentience: { category: "research", item: "opensentience" },
   kappa: { category: "research", item: "kappa" },
   invariants: { category: "research", item: "invariants" },
@@ -320,7 +379,7 @@ const CATEGORIES = [
   {
     id: "protocols",
     label: "Protocols",
-    items: ["ampersand", "pulse", "prism", "scope", "invariant_arithmetic"],
+    items: ["ampersand", "pulse", "prism", "scope"],
   },
   {
     id: "research",
@@ -340,6 +399,21 @@ const CATEGORIES = [
           "proof_monotonic",
           "proof_deny",
           "proof_append",
+        ],
+      },
+      {
+        label: "The Arithmetic Ladder",
+        items: [
+          "box_and_box",
+          "invariant_arithmetic",
+          "arith_deontic",
+          "arith_temporal",
+          "arith_reflexive",
+          "arith_epistemic",
+          "arith_strategic",
+          "arith_resource",
+          "arith_playground",
+          "laws",
         ],
       },
     ],

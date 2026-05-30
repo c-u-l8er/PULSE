@@ -1184,6 +1184,7 @@
                     <a href="#manifest">manifest</a>
                     <a href="#tokens">signals</a>
                     <a href="#nesting">nesting</a>
+                    <a href="#industries">industries</a>
                     <a href="#install">install</a>
                     <a href="#opensentience">open research</a>
                 </nav>
@@ -1513,10 +1514,603 @@
                 </div>
             </section>
 
+            <section class="section" id="industries">
+                <style>
+                    /* ── bb-gallery · portable [&] industry showcase (PULSE skin) ── */
+                    #industries .bb-gallery {
+                        --bb-accent: var(--pulse);
+                        --bb-accent2: var(--warm);
+                        --bb-ink: var(--foam);
+                        --bb-dim: var(--foam-dim);
+                        --bb-mute: var(--foam-mute);
+                        --bb-line: var(--rule);
+                        --bb-codebg: #03101599;
+                        margin-top: 2.5rem;
+                    }
+                    #industries .bb-tabs {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 0.5rem;
+                        margin-bottom: 1.5rem;
+                    }
+                    #industries .bb-tab {
+                        font-family: var(--mono);
+                        font-size: 0.8rem;
+                        letter-spacing: 0.02em;
+                        color: var(--bb-dim);
+                        background: transparent;
+                        border: 1px solid var(--bb-line);
+                        border-radius: 999px;
+                        padding: 0.55rem 1rem;
+                        cursor: pointer;
+                        transition: 0.18s;
+                    }
+                    #industries .bb-tab:hover {
+                        color: var(--bb-ink);
+                        border-color: var(--bb-accent);
+                    }
+                    #industries .bb-tab.active {
+                        color: var(--abyss);
+                        background: var(--bb-accent);
+                        border-color: var(--bb-accent);
+                        box-shadow: 0 0 28px -6px var(--bb-accent);
+                    }
+                    #industries .bb-panel {
+                        display: none;
+                    }
+                    #industries .bb-panel.active {
+                        display: block;
+                        animation: bb-fade 0.3s ease;
+                    }
+                    @keyframes bb-fade {
+                        from {
+                            opacity: 0;
+                            transform: translateY(6px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: none;
+                        }
+                    }
+                    #industries .bb-frame {
+                        color: var(--bb-dim);
+                        max-width: 64ch;
+                        margin-bottom: 1.25rem;
+                    }
+                    #industries .bb-frame b {
+                        color: var(--bb-accent2);
+                        font-weight: 500;
+                    }
+                    #industries .bb-codewrap {
+                        border: 1px solid var(--bb-line);
+                        border-radius: 14px;
+                        overflow: hidden;
+                        background: var(--bb-codebg);
+                    }
+                    #industries .bb-chead {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.55rem;
+                        padding: 0.7rem 1rem;
+                        border-bottom: 1px solid var(--bb-line);
+                        font-family: var(--mono);
+                        font-size: 0.74rem;
+                        color: var(--bb-mute);
+                    }
+                    #industries .bb-chead .bb-dot {
+                        width: 10px;
+                        height: 10px;
+                        border-radius: 50%;
+                        display: inline-block;
+                    }
+                    #industries .bb-chead .bb-fn {
+                        color: var(--bb-ink);
+                    }
+                    #industries .bb-chead .bb-lang {
+                        margin-left: auto;
+                        color: var(--bb-accent);
+                    }
+                    #industries pre.bb-pre {
+                        margin: 0;
+                        overflow-x: auto;
+                        padding: 1.25rem 1.35rem 1.5rem;
+                        font-family: var(--mono);
+                        font-size: 0.78rem;
+                        line-height: 1.62;
+                        color: var(--bb-dim);
+                    }
+                    #industries .bb-c {
+                        color: var(--bb-mute);
+                        font-style: italic;
+                    }
+                    #industries .bb-s {
+                        color: var(--pulse-3);
+                    }
+                    #industries .bb-at {
+                        color: var(--warm);
+                    }
+                    #industries .bb-kw {
+                        color: var(--pulse);
+                    }
+                    #industries .bb-mod {
+                        color: var(--foam);
+                    }
+                    #industries .bb-attr {
+                        color: var(--hot);
+                    }
+                    #industries .bb-meta {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 0.5rem;
+                        margin-top: 1rem;
+                    }
+                    #industries .bb-meta span {
+                        font-family: var(--mono);
+                        font-size: 0.72rem;
+                        color: var(--bb-dim);
+                        border: 1px solid var(--bb-line);
+                        border-radius: 7px;
+                        padding: 0.35rem 0.6rem;
+                    }
+                    #industries .bb-meta span b {
+                        color: var(--bb-accent);
+                        font-weight: 500;
+                    }
+                    #industries .bb-note {
+                        font-family: var(--mono);
+                        font-size: 0.74rem;
+                        color: var(--bb-mute);
+                        margin-top: 1.75rem;
+                        padding-top: 1.1rem;
+                        border-top: 1px solid var(--bb-line);
+                        max-width: 76ch;
+                    }
+                    #industries .bb-note em {
+                        color: var(--bb-dim);
+                        font-style: normal;
+                    }
+                </style>
+                <div class="section__head">
+                    <span class="label">§05 · by industry</span>
+                    <h2>One algebra. Every cadence in your business.</h2>
+                    <p>
+                        A loop is a loop whether it ticks every 30 seconds or
+                        nets once a day. Below, the same five PULSE phase kinds —
+                        <em>retrieve ▸ route ▸ act ▸ learn ▸ consolidate</em> —
+                        wear five industries. Each host emits a different
+                        canonical token over CloudEvents, so a logistics loop and
+                        a trading desk become PRISM-evaluable the same way.
+                    </p>
+                </div>
+
+                <div class="bb-gallery">
+                    <div class="bb-tabs" role="tablist">
+                        <button class="bb-tab active">Logistics &amp; fleet</button>
+                        <button class="bb-tab">Fintech settlement</button>
+                        <button class="bb-tab">Healthcare</button>
+                        <button class="bb-tab">DevOps</button>
+                        <button class="bb-tab">Trading</button>
+                    </div>
+
+                    <div class="bb-panels">
+                        <!-- 1 · LOGISTICS -->
+                        <div class="bb-panel active">
+                            <p class="bb-frame">
+                                <b>Dispatch & fleet ops.</b> Positions in every 30
+                                seconds, re-plan only when demand spikes (κ&gt;0),
+                                and ship an <em>OutcomeSignal</em> on every ETA so
+                                your routing model is measured, not assumed.
+                            </p>
+                            <div class="bb-codewrap">
+                                <div class="bb-chead">
+                                    <span class="bb-dot" style="background:#f15bb5"></span>
+                                    <span class="bb-dot" style="background:#f9c74f"></span>
+                                    <span class="bb-dot" style="background:#00f5d4"></span>
+                                    &nbsp;<span class="bb-fn">fleet_dispatch_loop.ex</span>
+                                    <span class="bb-lang">Elixir / PULSE.Loop</span>
+                                </div>
+                                <pre class="bb-pre"><code class="bb-code"></code></pre>
+                            </div>
+                            <div class="bb-meta">
+                                <span><b>cadence</b> tick · every 30s</span>
+                                <span><b>token</b> OutcomeSignal → PRISM</span>
+                                <span><b>invariant</b> κ-routing</span>
+                            </div>
+                            <script type="text/plain" class="bb-src">
+defmodule Fleet.DispatchLoop do
+  @moduledoc "Per-tick dispatch: who goes where, re-planned when demand spikes."
+  use PULSE.Loop, id: "fleet.dispatch", version: "0.2.0"
+
+  cadence :tick, every: {30, :second}, fallback: {:idle, 60_000}
+
+  phase :retrieve, :pull_positions do
+    inputs from: :external, schema: "FleetSnapshot"
+    signature "blake3(vehicle_ids, geofence, window)"
+    idempotent true
+  end
+
+  phase :route, :assess_demand do
+    invariant :kappa_routing
+    nest "fleet.replan", when: "kappa > 0", wait: :until_stable
+  end
+
+  phase :act, :assign_routes do
+    policy_check "delegatic.check_policy"
+    audit_event "assignment.created"
+    idempotent false
+  end
+
+  phase :learn, :from_eta do
+    on_signal "OutcomeSignal"
+    invariant :feedback_immutability
+  end
+
+  phase :consolidate, :nightly_rebalance do
+    cadence :idle, min_idle_ms: 300_000
+  end
+
+  emit "OutcomeSignal",
+    from: :from_eta,
+    to: {"prism.benchmark", :observe},
+    envelope: "cloudevents.v1",
+    when: "status in [:on_time, :late]",
+    delivery: :at_least_once
+end
+                            </script>
+                        </div>
+
+                        <!-- 2 · FINTECH -->
+                        <div class="bb-panel">
+                            <p class="bb-frame">
+                                <b>End-of-day settlement.</b> Gather the day's
+                                trades, net exposure, and <em>post nothing without
+                                quorum</em>. A ConsolidationEvent rolls the book to
+                                T+1 and feeds tomorrow's treasury forecast.
+                            </p>
+                            <div class="bb-codewrap">
+                                <div class="bb-chead">
+                                    <span class="bb-dot" style="background:#f15bb5"></span>
+                                    <span class="bb-dot" style="background:#f9c74f"></span>
+                                    <span class="bb-dot" style="background:#00f5d4"></span>
+                                    &nbsp;<span class="bb-fn">ledger_settlement_loop.ex</span>
+                                    <span class="bb-lang">Elixir / PULSE.Loop</span>
+                                </div>
+                                <pre class="bb-pre"><code class="bb-code"></code></pre>
+                            </div>
+                            <div class="bb-meta">
+                                <span><b>cadence</b> cron · 22:00 ET, Mon–Fri</span>
+                                <span><b>token</b> ConsolidationEvent</span>
+                                <span><b>invariant</b> quorum-before-commit</span>
+                            </div>
+                            <script type="text/plain" class="bb-src">
+defmodule Ledger.SettlementLoop do
+  @moduledoc "End-of-day netting: nothing commits without quorum."
+  use PULSE.Loop, id: "ledger.settlement", version: "1.0.0"
+
+  cadence :cron, at: "0 22 * * MON-FRI", tz: "America/New_York"
+
+  phase :retrieve, :gather_trades do
+    inputs from: :external, schema: "TradeBatch"
+    signature "blake3(book_id, trade_ids, value_date)"
+    idempotent true
+  end
+
+  phase :route, :net_exposure do
+    invariant :kappa_routing
+  end
+
+  phase :act, :post_entries do
+    invariant :quorum_before_commit
+    policy_check "delegatic.check_policy"
+    audit_event "settlement.posted"
+    idempotent false
+  end
+
+  phase :learn, :reconcile_breaks do
+    on_signal "OutcomeSignal"
+    invariant :feedback_immutability
+  end
+
+  phase :consolidate, :roll_to_t1 do
+    invariant :append_only_audit
+  end
+
+  emit "ConsolidationEvent",
+    from: :roll_to_t1,
+    to: {"treasury.forecast", :retrieve},
+    envelope: "cloudevents.v1",
+    delivery: :exactly_once
+end
+                            </script>
+                        </div>
+
+                        <!-- 3 · HEALTHCARE -->
+                        <div class="bb-panel">
+                            <p class="bb-frame">
+                                <b>Continuous patient monitoring.</b> A surprise in
+                                the vitals stream doesn't auto-commit — it
+                                <em>routes to a clinician</em> and emits a
+                                SurpriseSignal (the OS-011 forward-model error) so
+                                the escalation loop wakes only when it should.
+                            </p>
+                            <div class="bb-codewrap">
+                                <div class="bb-chead">
+                                    <span class="bb-dot" style="background:#f15bb5"></span>
+                                    <span class="bb-dot" style="background:#f9c74f"></span>
+                                    <span class="bb-dot" style="background:#00f5d4"></span>
+                                    &nbsp;<span class="bb-fn">vitals_monitor_loop.ex</span>
+                                    <span class="bb-lang">Elixir / PULSE.Loop</span>
+                                </div>
+                                <pre class="bb-pre"><code class="bb-code"></code></pre>
+                            </div>
+                            <div class="bb-meta">
+                                <span><b>cadence</b> event · sensor_frame</span>
+                                <span><b>token</b> SurpriseSignal → escalate</span>
+                                <span><b>invariant</b> outcome-grounding</span>
+                            </div>
+                            <script type="text/plain" class="bb-src">
+defmodule Vitals.MonitorLoop do
+  @moduledoc "Continuous monitoring: a surprise routes to a clinician, not a commit."
+  use PULSE.Loop, id: "vitals.monitor", version: "0.3.0"
+
+  cadence :event, trigger: "sensor_frame", fallback: {:idle, 5_000}
+
+  phase :retrieve, :read_stream do
+    inputs from: :external, schema: "VitalsFrame"
+    signature "blake3(patient_id, sensor_id, t)"
+    timeout_ms 250
+    idempotent true
+  end
+
+  phase :route, :detect_anomaly do
+    invariant :kappa_routing
+    nest "vitals.escalate", when: "surprise > threshold", wait: :until_ack
+  end
+
+  phase :act, :chart_observation do
+    policy_check "delegatic.check_policy"
+    audit_event "observation.recorded"
+    idempotent false
+  end
+
+  phase :learn, :from_forward_error do
+    on_signal "SurpriseSignal"
+    invariant :outcome_grounding
+  end
+
+  phase :consolidate, :shift_summary do
+    cadence :idle, min_idle_ms: 600_000
+  end
+
+  emit "SurpriseSignal",
+    from: :detect_anomaly,
+    to: {"vitals.escalate", :retrieve},
+    envelope: "cloudevents.v1",
+    when: "prediction_error > 3.0",
+    delivery: :at_least_once
+end
+                            </script>
+                        </div>
+
+                        <!-- 4 · DEVOPS -->
+                        <div class="bb-panel">
+                            <p class="bb-frame">
+                                <b>Deploy & incident pipeline.</b> Every gate is
+                                <em>append-only audit</em>; risky changes canary
+                                first (blast_radius&gt;0); a rollback or SLO breach
+                                ships a ReputationUpdate so Delegatic governance
+                                learns which changes to trust.
+                            </p>
+                            <div class="bb-codewrap">
+                                <div class="bb-chead">
+                                    <span class="bb-dot" style="background:#f15bb5"></span>
+                                    <span class="bb-dot" style="background:#f9c74f"></span>
+                                    <span class="bb-dot" style="background:#00f5d4"></span>
+                                    &nbsp;<span class="bb-fn">deploy_pipeline_loop.ex</span>
+                                    <span class="bb-lang">Elixir / PULSE.Loop</span>
+                                </div>
+                                <pre class="bb-pre"><code class="bb-code"></code></pre>
+                            </div>
+                            <div class="bb-meta">
+                                <span><b>cadence</b> event · git_push</span>
+                                <span><b>token</b> ReputationUpdate → Delegatic</span>
+                                <span><b>invariant</b> append-only-audit</span>
+                            </div>
+                            <script type="text/plain" class="bb-src">
+defmodule Deploy.PipelineLoop do
+  @moduledoc "Push to prod: every gate appended, every rollback reputational."
+  use PULSE.Loop, id: "deploy.pipeline", version: "2.1.0"
+
+  cadence :event, trigger: "git_push", fallback: :manual
+
+  phase :retrieve, :load_diff do
+    inputs from: :external, schema: "ChangeSet"
+    signature "blake3(repo, sha, targets)"
+    idempotent true
+  end
+
+  phase :route, :risk_gate do
+    invariant :kappa_routing
+    nest "deploy.canary", when: "blast_radius > 0", wait: :until_stable
+  end
+
+  phase :act, :promote do
+    invariant :append_only_audit
+    policy_check "delegatic.check_policy"
+    audit_event "release.promoted"
+    idempotent false
+  end
+
+  phase :learn, :from_slo do
+    on_signal "OutcomeSignal"
+    invariant :feedback_immutability
+  end
+
+  phase :consolidate, :postmortem do
+    cadence :idle, min_idle_ms: 900_000
+  end
+
+  emit "ReputationUpdate",
+    from: :from_slo,
+    to: {"delegatic.governance", :learn},
+    envelope: "cloudevents.v1",
+    when: "rollback? or slo_breach?",
+    delivery: :at_least_once
+end
+                            </script>
+                        </div>
+
+                        <!-- 5 · TRADING -->
+                        <div class="bb-panel">
+                            <p class="bb-frame">
+                                <b>Systematic trading desk.</b> A streaming book
+                                with a hard 50 ms lag budget. Clear signals fire
+                                immediately; <em>ambiguous ones (κ&gt;0) route to a
+                                bounded deliberation</em> and come back as a
+                                DeliberationResult before the deadline.
+                            </p>
+                            <div class="bb-codewrap">
+                                <div class="bb-chead">
+                                    <span class="bb-dot" style="background:#f15bb5"></span>
+                                    <span class="bb-dot" style="background:#f9c74f"></span>
+                                    <span class="bb-dot" style="background:#00f5d4"></span>
+                                    &nbsp;<span class="bb-fn">desk_tick_loop.ex</span>
+                                    <span class="bb-lang">Elixir / PULSE.Loop</span>
+                                </div>
+                                <pre class="bb-pre"><code class="bb-code"></code></pre>
+                            </div>
+                            <div class="bb-meta">
+                                <span><b>cadence</b> stream · ≤50 ms lag</span>
+                                <span><b>token</b> DeliberationResult</span>
+                                <span><b>invariant</b> κ-routing</span>
+                            </div>
+                            <script type="text/plain" class="bb-src">
+defmodule Desk.TickLoop do
+  @moduledoc "Tick to decision to settle — kappa routes the ambiguous ones."
+  use PULSE.Loop, id: "desk.tick", version: "0.5.0"
+
+  cadence :stream, source: "market_data", max_lag_ms: 50
+
+  phase :retrieve, :ingest_book do
+    inputs from: :external, schema: "OrderBookDelta"
+    signature "blake3(symbol, seq)"
+    idempotent true
+  end
+
+  phase :route, :signal_or_think do
+    invariant :kappa_routing
+    nest "desk.deliberate", when: "kappa > 0", wait: :bounded, deadline_ms: 200
+  end
+
+  phase :act, :place_order do
+    policy_check "delegatic.check_policy"
+    audit_event "order.placed"
+    idempotent false
+  end
+
+  phase :learn, :from_fill do
+    on_signal "DeliberationResult"
+    invariant :feedback_immutability
+  end
+
+  phase :consolidate, :eod_pnl do
+    cadence :cron, at: "5 16 * * MON-FRI"
+  end
+
+  emit "DeliberationResult",
+    from: :signal_or_think,
+    to: {"desk.deliberate", :route},
+    envelope: "cloudevents.v1",
+    delivery: :at_most_once
+end
+                            </script>
+                        </div>
+                    </div>
+
+                    <p class="bb-note">
+                        Honest note · these are <em>illustrative reference
+                        hosts</em> — a readable <em>PULSE.Loop</em> DSL sketch, not
+                        a published library. The conformance-tested surface is the
+                        manifest: every loop above serializes to a
+                        <em>*.pulse.json</em> validated by <em>os-pulse</em>
+                        against the v0.1 schema and the 12-test suite. The five
+                        phase kinds and five tokens are the real protocol.
+                    </p>
+                </div>
+
+                <script>
+                    (function () {
+                        var TOK =
+                            /(#[^\n]*)|("(?:[^"\\]|\\.)*")|(:[a-zA-Z_]\w*[?!]?)|(@[a-zA-Z_]\w*)|\b(defmodule|defmacro|defstruct|defp|def|do|end|fn|cond|case|if|else|quote|unquote|use|import|alias|when|true|false|nil|receive|after|with|for)\b|\b([A-Z]\w*)\b/g;
+                        function esc(t) {
+                            return t
+                                .replace(/&/g, "&amp;")
+                                .replace(/</g, "&lt;")
+                                .replace(/>/g, "&gt;");
+                        }
+                        function hl(src) {
+                            var out = "",
+                                last = 0,
+                                m;
+                            TOK.lastIndex = 0;
+                            while ((m = TOK.exec(src))) {
+                                out += esc(src.slice(last, m.index));
+                                var cls = m[1]
+                                    ? "c"
+                                    : m[2]
+                                      ? "s"
+                                      : m[3]
+                                        ? "at"
+                                        : m[4]
+                                          ? "attr"
+                                          : m[5]
+                                            ? "kw"
+                                            : "mod";
+                                out +=
+                                    '<span class="bb-' +
+                                    cls +
+                                    '">' +
+                                    esc(m[0]) +
+                                    "</span>";
+                                last = m.index + m[0].length;
+                            }
+                            out += esc(src.slice(last));
+                            return out;
+                        }
+                        document
+                            .querySelectorAll("#industries .bb-panel")
+                            .forEach(function (panel) {
+                                var src = panel.querySelector(".bb-src");
+                                var code = panel.querySelector(".bb-code");
+                                if (src && code)
+                                    code.innerHTML = hl(
+                                        src.textContent.replace(/^\s*\n/, ""),
+                                    );
+                            });
+                        var tabs = document.querySelectorAll("#industries .bb-tab");
+                        var panels = document.querySelectorAll(
+                            "#industries .bb-panel",
+                        );
+                        tabs.forEach(function (tab, i) {
+                            tab.addEventListener("click", function () {
+                                tabs.forEach(function (t) {
+                                    t.classList.remove("active");
+                                });
+                                panels.forEach(function (p) {
+                                    p.classList.remove("active");
+                                });
+                                tab.classList.add("active");
+                                panels[i].classList.add("active");
+                            });
+                        });
+                    })();
+                </script>
+            </section>
+
             <section class="section" id="install">
                 <div class="install">
                     <div>
-                        <span class="label">§05 · install</span>
+                        <span class="label">§06 · install</span>
                         <h2>Validate, register, circulate.</h2>
                         <p>
                             <code>os-pulse</code> is the reference MCP server
@@ -1556,7 +2150,7 @@
 
             <section class="section section--os" id="opensentience">
                 <div class="os">
-                    <span class="label">§06 · open research</span>
+                    <span class="label">§07 · open research</span>
 
                     <div class="os__grid">
                         <div class="os__copy">

@@ -214,7 +214,7 @@ npm publish --access public
 ## Why os-pulse ships first
 
 1. **Smallest scope** — pure JS, no escript wrapper, no native Elixir binary.
-2. **Unblocks the others** — `box-and-box`, `graphonomous`, and `os-prism`
+2. **Unblocks the others** — `graphonomous` and `os-prism`
    all ship their own PULSE manifests; once `os-pulse` is live they can
    register against a hosted or local instance and prove end-to-end flow.
 3. **Cleanest conformance story** — the 12 tests are specified in the PULSE
