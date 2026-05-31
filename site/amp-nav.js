@@ -31,7 +31,7 @@
  * License: MIT (Ampersand Box Design)
  */
 
-const VERSION = "0.7.0";
+const VERSION = "0.7.1";
 
 // Canonical URLs per property. The "href" is the destination used in cross-property
 // links; the "label" is what visitors see in the dropdown.
@@ -179,8 +179,8 @@ const LINKS = {
   // 97 property-tested laws) + the six living-paper rung pages + playground + laws.
   box_and_box: {
     label: "box-and-box",
-    tagline: "The governance kernel · 8 rungs · 97 laws",
-    href: "https://ampersandboxdesign.com",
+    tagline: "The governance kernel · 8 rungs · 97 laws · 5 languages",
+    href: "https://opensentience.org/box-and-box/",
     status: "v0.8.0",
     tier: "shipped",
   },
