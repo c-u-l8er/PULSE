@@ -31,7 +31,7 @@
  * License: MIT (Ampersand Box Design)
  */
 
-const VERSION = "0.7.1";
+const VERSION = "0.7.3";
 
 // Canonical URLs per property. The "href" is the destination used in cross-property
 // links; the "label" is what visitors see in the dropdown.
@@ -176,16 +176,21 @@ const LINKS = {
   },
 
   // The arithmetic ladder — box-and-box governance kernel (8 rungs, one bridge,
-  // 97 property-tested laws) + the six living-paper rung pages + playground + laws.
+  // 116 property-tested laws) + the six living-paper rung pages + playground + laws.
   box_and_box: {
     label: "box-and-box",
-    tagline: "The governance kernel · 8 rungs · 97 laws · 5 languages",
+    tagline: "The governance kernel · 8 rungs · 116 laws · npm",
     href: "https://opensentience.org/box-and-box/",
-    status: "v0.8.0",
+    status: "v0.10.0",
     tier: "shipped",
   },
+  weave: {
+    label: "Cost is a Type",
+    tagline: "Weave — the resource rung as a static cost certificate",
+    href: "https://weave.opensentience.org",
+  },
   laws: {
-    label: "The 97 laws",
+    label: "The 116 laws",
     tagline: "Conformance — every law, live",
     href: "https://ampersandboxdesign.com/laws.html",
   },
@@ -221,7 +226,7 @@ const LINKS = {
   },
   arith_playground: {
     label: "Playground",
-    tagline: "Interactive law sandbox · 64 of 97 live",
+    tagline: "Interactive law sandbox · 64 of 116 live",
     href: "https://opensentience.org/playground.html",
   },
 
@@ -343,6 +348,7 @@ const PROPERTY_MAP = {
   scope: { category: "protocols", item: "scope" },
   invariant_arithmetic: { category: "research", item: "invariant_arithmetic" },
   box_and_box: { category: "research", item: "box_and_box" },
+  weave: { category: "research", item: "weave" },
   laws: { category: "research", item: "laws" },
   arith_deontic: { category: "research", item: "arith_deontic" },
   arith_temporal: { category: "research", item: "arith_temporal" },
@@ -388,7 +394,7 @@ const CATEGORIES = [
     columns: [
       {
         label: "Protocols & Census",
-        items: ["opensentience", "invariants", "topology_warrant"],
+        items: ["opensentience", "invariants", "topology_warrant", "weave"],
       },
       {
         label: "Proven Invariants",
@@ -402,9 +408,15 @@ const CATEGORIES = [
         ],
       },
       {
+        // The kernel-level entry points: the package, its conformance, the sandbox.
         label: "The Arithmetic Ladder",
+        items: ["box_and_box", "laws", "arith_playground"],
+      },
+      {
+        // The eight rungs themselves, as individual living-paper pages
+        // (invariant_arithmetic covers rungs 1–2; arith_* are rungs 3–8).
+        label: "The Eight Rungs",
         items: [
-          "box_and_box",
           "invariant_arithmetic",
           "arith_deontic",
           "arith_temporal",
@@ -412,8 +424,6 @@ const CATEGORIES = [
           "arith_epistemic",
           "arith_strategic",
           "arith_resource",
-          "arith_playground",
-          "laws",
         ],
       },
     ],
