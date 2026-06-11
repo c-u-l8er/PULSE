@@ -18,9 +18,9 @@ systems.
 
 | Layer  | Question                                          | Artifact                          |
 |--------|---------------------------------------------------|-----------------------------------|
-| [&]    | What can each agent do, and how do they compose?  | `*.ampersand.json`                |
-| PULSE  | How do their processes cycle and signal each other? | `*.pulse.json` (loop manifest)  |
-| PRISM  | How well do those cycles actually work over time? | Diagnostic reports + leaderboards |
+| [[&]](../../AmpersandBoxDesign/docs/index.md)    | What can each agent do, and how do they compose?  | `*.ampersand.json`                |
+| [PULSE](../../opensentience.org/docs/spec/OS-010-PULSE-SPECIFICATION.md)  | How do their processes cycle and signal each other? | `*.pulse.json` (loop manifest)  |
+| [PRISM](../../opensentience.org/docs/spec/OS-009-PRISM-SPECIFICATION.md) | How well do those cycles actually work over time? | Diagnostic reports + leaderboards |
 
 A customer adopting all three writes (at minimum) two files:
 
@@ -128,3 +128,19 @@ separately before converging in the browser.
 | How well it works                      | PRISM  | continuous         |
 
 Different rates of change deserve different protocols.
+
+## Related
+
+- [Ecosystem overview](../../ECOSYSTEM.md) — how every product fits the stack
+- [Stack status](../../STACK_COMPLETION.md) — versions, test counts, deployment state
+- [[&] Protocol docs](../../AmpersandBoxDesign/docs/index.md) — capability composition (structural)
+- [OS-010 PULSE specification](../../opensentience.org/docs/spec/OS-010-PULSE-SPECIFICATION.md) — loop + circulation algebra (temporal)
+- [OS-009 PRISM specification](../../opensentience.org/docs/spec/OS-009-PRISM-SPECIFICATION.md) — cross-system benchmark (diagnostic)
+- [Graphonomous spec](../../graphonomous/docs/spec/README.md) — the reference memory loop these protocols compose around
+
+### PULSE implementation docs
+
+- [Arithmetic Integration](ARITHMETIC_INTEGRATION.md) — how PULSE phases gate on the box-and-box kernel verdict
+- [V0.2 Behavioral Types](V0.2-BEHAVIORAL-TYPES.md) — session-typed phase contracts (draft)
+- [V0.2 Implementation Plan](V0.2-IMPLEMENTATION-PLAN.md) — roadmap for the v0.2 manifest schema
+- [NPM Package](NPM_PACKAGE.md) — the PULSE validator/conformance package

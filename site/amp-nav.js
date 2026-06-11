@@ -31,7 +31,7 @@
  * License: MIT (Ampersand Box Design)
  */
 
-const VERSION = "0.7.3";
+const VERSION = "0.7.7";
 
 // Canonical URLs per property. The "href" is the destination used in cross-property
 // links; the "label" is what visitors see in the dropdown.
@@ -287,21 +287,73 @@ const LINKS = {
     href: "https://opensentience.org/proofs/append-only.html",
   },
 
-  // Docs — three docs subdomains
-  docs_abd: {
-    label: "[&] Protocol docs",
-    tagline: "Structural composition guides",
+  // Docs — quick-jumps into the unified stack-docs atlas (docs.ampersandboxdesign.com),
+  // a single filesystem-mirror site covering every project. Rather than linking out to
+  // per-product subdomains, these deep-link to the hottest subjects in the stack.
+  d_home: {
+    label: "Stack docs home",
+    tagline: "Every doc, mirrored from the repo",
     href: "https://docs.ampersandboxdesign.com",
   },
-  docs_graph: {
-    label: "Graphonomous docs",
-    tagline: "Memory substrate API & MCP",
-    href: "https://docs.graphonomous.com",
+  d_index: {
+    label: "[&] Protocol docs",
+    tagline: "The protocol documentation hub",
+    href: "https://docs.ampersandboxdesign.com/#/AmpersandBoxDesign/docs/index.md",
   },
-  docs_os: {
-    label: "OpenSentience docs",
-    tagline: "Research protocols reference",
-    href: "https://docs.opensentience.org",
+  d_eco: {
+    label: "Ecosystem overview",
+    tagline: "Every product in the stack, at a glance",
+    href: "https://docs.ampersandboxdesign.com/#/ECOSYSTEM.md",
+  },
+  d_arch: {
+    label: "Architecture",
+    tagline: "How the core artifacts fit together",
+    href: "https://docs.ampersandboxdesign.com/#/AmpersandBoxDesign/docs/architecture.md",
+  },
+  d_compose: {
+    label: "Capability composition",
+    tagline: "[&] structural composition (CC2)",
+    href: "https://docs.ampersandboxdesign.com/#/AmpersandBoxDesign/docs/CC2-capability-composition.md",
+  },
+  d_three: {
+    label: "The three-protocol stack",
+    tagline: "[&] · PULSE · PRISM, working together",
+    href: "https://docs.ampersandboxdesign.com/#/PULSE/docs/THREE_PROTOCOL_STACK.md",
+  },
+  d_memory: {
+    label: "Graphonomous — memory",
+    tagline: "The continual-learning engine",
+    href: "https://docs.ampersandboxdesign.com/#/graphonomous/docs/spec/README.md",
+  },
+  d_prism: {
+    label: "PRISM — evaluation",
+    tagline: "Benchmark what's broken & what fits",
+    href: "https://docs.ampersandboxdesign.com/#/opensentience.org/docs/spec/OS-009-PRISM-SPECIFICATION.md",
+  },
+  d_govern: {
+    label: "&govern — governance",
+    tagline: "Policy, identity, telemetry, cost",
+    href: "https://docs.ampersandboxdesign.com/#/AmpersandBoxDesign/docs/capabilities/govern.md",
+  },
+  d_quickstart: {
+    label: "Quickstart",
+    tagline: "Run the [&] reference CLI in five minutes",
+    href: "https://docs.ampersandboxdesign.com/#/AmpersandBoxDesign/docs/quickstart.md",
+  },
+  d_faq: {
+    label: "FAQ",
+    tagline: "Straight answers to the common questions",
+    href: "https://docs.ampersandboxdesign.com/#/AmpersandBoxDesign/docs/faq.md",
+  },
+  d_umbrella: {
+    label: "The [&] umbrella",
+    tagline: "One pipeline: declare → compose → govern → observe",
+    href: "https://docs.ampersandboxdesign.com/#/AmpersandBoxDesign/docs/UMBRELLA.md",
+  },
+  d_bendscript: {
+    label: "BendScript — documents",
+    tagline: "The graph-first doc protocol these pages run on",
+    href: "https://docs.ampersandboxdesign.com/#/bendscript.com/docs/spec/README.md",
   },
 
   // Company
@@ -309,6 +361,13 @@ const LINKS = {
     label: "Ampersand Box Design",
     tagline: "The factory for evaluated cognitive systems",
     href: "https://ampersandboxdesign.com",
+  },
+  traaviis: {
+    label: "TRAAVIIS",
+    tagline: "The harness engineer — OS-008 terminal runtime",
+    href: "https://traaviis.com",
+    status: "v0.1.0",
+    tier: "alpha",
   },
   contact: {
     label: "Talk to us",
@@ -367,6 +426,7 @@ const PROPERTY_MAP = {
   proof_monotonic: { category: "research", item: "proof_monotonic" },
   proof_deny: { category: "research", item: "proof_deny" },
   proof_append: { category: "research", item: "proof_append" },
+  traaviis: { category: "company", item: "traaviis" },
   docs: { category: "docs", item: null },
 };
 
@@ -436,12 +496,26 @@ const CATEGORIES = [
   {
     id: "docs",
     label: "Docs",
-    items: ["docs_abd", "docs_graph", "docs_os"],
+    mega: true,
+    columns: [
+      {
+        label: "Start here",
+        items: ["d_home", "d_quickstart", "d_index", "d_eco", "d_faq"],
+      },
+      {
+        label: "The protocol stack",
+        items: ["d_arch", "d_umbrella", "d_compose", "d_three"],
+      },
+      {
+        label: "Engines & capabilities",
+        items: ["d_memory", "d_prism", "d_bendscript", "d_govern"],
+      },
+    ],
   },
   {
     id: "company",
     label: "Company",
-    items: ["home", "contact"],
+    items: ["home", "traaviis", "contact"],
   },
   {
     id: "compose",
