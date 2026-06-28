@@ -202,13 +202,22 @@
         "envelope":       { "type": "string", "enum": ["cloudevents.v1"] },
         "token": {
           "type": "string",
-          "enum": [
-            "TopologyContext",
-            "DeliberationResult",
-            "OutcomeSignal",
-            "ReputationUpdate",
-            "ConsolidationEvent",
-            "SurpriseSignal"
+          "description": "Either one of the six canonical PULSE tokens (bare PascalCase) or a vendor-namespaced token of the form <vendor>.v<N>.<TokenName> (added in PULSE v0.1.2). The prefixes 'pulse', 'opensentience', and 'os' are reserved for canonical use and MUST NOT be used as a vendor namespace.",
+          "oneOf": [
+            {
+              "enum": [
+                "TopologyContext",
+                "DeliberationResult",
+                "OutcomeSignal",
+                "ReputationUpdate",
+                "ConsolidationEvent",
+                "SurpriseSignal"
+              ]
+            },
+            {
+              "$comment": "Vendor-namespaced token (PULSE v0.1.2). Example: scope.v1.SpatialClaim",
+              "pattern": "^[a-z][a-z0-9_]*\\.v[0-9]+\\.[A-Z][A-Za-z0-9]*$"
+            }
           ]
         },
         "to_loop":  { "type": "string" },

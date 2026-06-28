@@ -8,6 +8,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ManifestValidator } from "../src/schema.ts";
 import { runConformance } from "../src/conformance.ts";
+import {
+  ceTypeFor,
+  isValidToken,
+  isVendorToken,
+  isCanonicalToken,
+} from "../src/tokens.ts";
 
 const MINIMAL_MANIFEST = {
   $schema: "https://opensentience.org/schemas/pulse-loop-manifest.v0.1.json",
@@ -62,4 +68,65 @@ test("manifest with missing required field fails T01", () => {
   const report = runConformance(bad, res);
   assert.equal(report.results[0].status, "fail");
   assert.equal(report.overall, "fail");
+});
+
+// --- v0.1.2 vendor-namespaced tokens ---------------------------------------
+
+const withConnectionToken = (token: string) => ({
+  ...MINIMAL_MANIFEST,
+  pulse_protocol_version: "0.1.2",
+  connections: [
+    {
+      id: "c1",
+      emit_phase: "apply",
+      token,
+      to_loop: "other.loop",
+    },
+  ],
+});
+
+test("connection with a canonical token validates", () => {
+  const v = new ManifestValidator();
+  const res = v.check(withConnectionToken("OutcomeSignal"));
+  assert.equal(res.valid, true, res.errorText);
+});
+
+test("connection with a vendor-namespaced token validates (v0.1.2)", () => {
+  const v = new ManifestValidator();
+  const res = v.check(withConnectionToken("scope.v1.SpatialClaim"));
+  assert.equal(res.valid, true, res.errorText);
+});
+
+test("connection with a malformed vendor token is rejected", () => {
+  const v = new ManifestValidator();
+  for (const bad of [
+    "scope.SpatialClaim", // missing version segment
+    "Scope.v1.SpatialClaim", // uppercase vendor segment
+    "scope.v1.spatialClaim", // lowercase token name
+    "NotAToken", // not canonical, not namespaced
+  ]) {
+    const res = v.check(withConnectionToken(bad));
+    assert.equal(res.valid, false, `expected ${bad} to be rejected`);
+  }
+});
+
+test("token helpers classify canonical vs vendor vs invalid", () => {
+  assert.equal(isCanonicalToken("SurpriseSignal"), true);
+  assert.equal(isVendorToken("SurpriseSignal"), false);
+  assert.equal(isVendorToken("scope.v1.SpatialClaim"), true);
+  assert.equal(isVendorToken("pulse.v1.Foo"), false); // reserved prefix
+  assert.equal(isValidToken("scope.v1.SpatialClaim"), true);
+  assert.equal(isValidToken("nope"), false);
+});
+
+test("ceTypeFor derives canonical and vendor CloudEvents types", () => {
+  assert.equal(
+    ceTypeFor("OutcomeSignal"),
+    "org.opensentience.pulse.outcome_signal.v1",
+  );
+  assert.equal(
+    ceTypeFor("scope.v1.SpatialClaim"),
+    "scope.spatial_claim.v1",
+  );
+  assert.throws(() => ceTypeFor("not-a-token"));
 });

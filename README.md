@@ -23,9 +23,10 @@ One of three MCP servers in the [&] three-protocol stack:
 - Runs the 12-test PULSE v0.1 conformance suite and stores the report.
 - Persists registered manifests, connections, and phase invocations in an
   embedded SQLite + sqlite-vec database.
-- Emits and receives **CloudEvents v1.0 envelopes** for the five canonical
+- Emits and receives **CloudEvents v1.0 envelopes** for the six canonical
   cross-loop tokens (`TopologyContext`, `DeliberationResult`, `OutcomeSignal`,
-  `ReputationUpdate`, `ConsolidationEvent`).
+  `ReputationUpdate`, `ConsolidationEvent`, `SurpriseSignal`) plus
+  vendor-namespaced tokens (`<vendor>.v<N>.<TokenName>`, PULSE v0.1.2).
 - Exposes 10 MCP tools and 3 resources over stdio.
 
 ## MCP tools

@@ -10,7 +10,7 @@ import { z } from "zod";
 import type { Handle } from "./db.js";
 import type { ManifestValidator } from "./schema.js";
 import { runConformance } from "./conformance.js";
-import { buildCloudEvent, TOKEN_KINDS, type TokenKind } from "./tokens.js";
+import { buildCloudEvent, isValidToken } from "./tokens.js";
 
 export interface ToolContext {
   db: Handle;
@@ -240,7 +240,10 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
     "Package a token payload into a CloudEvents v1 envelope, persist it, and optionally route to a target loop for later pickup.",
     {
       source: z.string(),
-      token: z.enum(TOKEN_KINDS as unknown as [TokenKind, ...TokenKind[]]),
+      token: z.string().refine(isValidToken, {
+        message:
+          "token must be a canonical PULSE token or a vendor-namespaced token of the form <vendor>.v<N>.<TokenName> (e.g. scope.v1.SpatialClaim)",
+      }),
       data: z.record(z.any()),
       trace_id: z.string().optional(),
       correlation_id: z.string().optional(),
