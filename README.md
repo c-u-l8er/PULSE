@@ -105,6 +105,55 @@ substrate (e.g. Graphonomous, PRISM) reach `live_local`. Tests that lack the
 required observation remain `pending` with a rationale identifying the missing
 capability.
 
+## T08–T10 live-substrate evidence report
+
+The live-substrate harness (`test/live-substrate.test.ts`) exercises T08–T10
+through two independent os-pulse MCP sessions backed by real SQLite persistence.
+Each test is fail-closed: if the substrate cannot be contacted, the test exits
+nonzero.
+
+Settling command:
+```bash
+node --test --experimental-strip-types test/live-substrate.test.ts
+```
+
+### T08 — Signal deduplication
+
+| Field | Value |
+|---|---|
+| Prior rung | `in_tree` (LoopDriver simulation only) |
+| Resulting rung | `live_local` (adverse) |
+| Verdict | `fail` — duplicate accepted |
+| Settling command | `node --test --experimental-strip-types test/live-substrate.test.ts --test-name-pattern='T08\|duplicate\|dedup'` |
+| Evidence | Two `emit_signal` calls with identical `trace_id`, `token`, and `data` through a real PULSE MCP session; `receive_signal` returned both signals. |
+| Missing capability | Content-level or trace-level signal deduplication. `emit_signal` generates unique `ce_id` values via `crypto.randomUUID`, so replayed-envelope dedup by `ce_id` UNIQUE constraint is untestable through the MCP API. A dedup capability would require either (a) a UNIQUE constraint on `(trace_id, token, delivered_to)` or (b) caller-supplied idempotency keys. |
+
+### T09 — Substrate degradation
+
+| Field | Value |
+|---|---|
+| Prior rung | `in_tree` (LoopDriver null-substrate fallback) |
+| Resulting rung | `live_local` (adverse) |
+| Verdict | `fail` — data loss on substrate removal |
+| Settling command | `node --test --experimental-strip-types test/live-substrate.test.ts --test-name-pattern='T09\|degrad\|fallback\|loss'` |
+| Evidence | Session 1 emits a baseline signal, then the SQLite database file is forcibly deleted. Session 2 starts on the same path; the server recreates an empty database. 0 of 1 baseline signals recovered. |
+| Missing capability | Substrate backup, replication, or fallback persistence. Data loss is permanent when the SQLite file is removed. A degradation-resilient design would require WAL-based recovery, replicated storage, or a fallback persistence layer. |
+
+### T10 — Multi-tenant isolation
+
+| Field | Value |
+|---|---|
+| Prior rung | `in_tree` (LoopDriver workspace-scoped simulation) |
+| Resulting rung | `live_local` (adverse) |
+| Verdict | `fail` — cross-workspace leakage detected |
+| Settling command | `node --test --experimental-strip-types test/live-substrate.test.ts --test-name-pattern='T10\|tenant\|workspace\|isolation'` |
+| Evidence | Two independent MCP sessions share one SQLite database. Session 1 (tenant alpha) emits a signal to `test.workspace.alpha`. Session 2 (tenant beta) calls `receive_signal` for alpha's `loop_id` and receives alpha's signal. |
+| Missing capability | Workspace-scoped signal isolation. `receive_signal` filters by `delivered_to` (loop_id) without workspace authentication or scoping, so any session sharing the SQLite database can read any loop's signals. Isolation would require per-workspace access control or separate database files per tenant. |
+
+### DOCTRINE:
+
+**advanced** — T08, T09, and T10 each moved from `in_tree` to adverse `live_local`. The prior evidence was LoopDriver simulation (single-process, injected transport). The new evidence comes from two independent os-pulse MCP child processes sharing a real SQLite database, exercising the actual signal persistence and delivery boundary. All three are adverse observations: the properties (deduplication, degradation resilience, tenant isolation) are not upheld by the current substrate. The missing capabilities are named above. No property was fabricated as passing; no rung was inflated.
+
 ## Build from source
 
 ```bash
