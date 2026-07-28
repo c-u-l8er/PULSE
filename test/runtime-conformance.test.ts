@@ -1,5 +1,5 @@
 /**
- * Runtime conformance tests — exercise behavioral properties T02–T07 and T11
+ * Runtime conformance tests — exercise behavioral properties T02–T11
  * by driving an in-process loop simulation against reference manifests.
  *
  * Evidence rung: `in_tree` — the driver simulates phase execution with real
@@ -42,7 +42,7 @@ function runWithDriver(
   extraObs?: RuntimeObservations,
 ): { report: ConformanceReport; driver: LoopDriver; normalRun: ReturnType<LoopDriver["runCycle"]>; adverseRun: ReturnType<LoopDriver["runCycle"]> } {
   const driver = new LoopDriver(manifest);
-  const normalRun = driver.runCycle({ trace_id: "test-trace-001" });
+  const normalRun = driver.runCycle({ trace_id: "test-trace-001", workspace_id: "ws-1" });
 
   // Find a mutating phase to inject failure into for atomicity testing
   const phases: any[] = manifest.phases ?? [];
@@ -54,7 +54,22 @@ function runWithDriver(
       })
     : driver.runCycle({ trace_id: "test-trace-adverse" });
 
-  const obs = driver.deriveObservations(normalRun, adverseRun);
+  // T08: duplicate delivery run — same trace_id to produce duplicate signal ids
+  const dupRun = driver.runCycle({ trace_id: "test-trace-001", workspace_id: "ws-1" });
+
+  // T09: substrate degradation — find first null substrate
+  const subs = manifest.substrates ?? {};
+  const nullSub = Object.entries(subs).find(([, v]) => v == null);
+  const degradedRun = nullSub
+    ? driver.runCycle({ trace_id: "test-trace-degraded", degrade_substrate: nullSub[0] })
+    : undefined;
+
+  // T10: tenant isolation — run in a different workspace
+  const isolationRun = manifest.workspace_scope === "required"
+    ? driver.runCycle({ trace_id: "test-trace-iso", workspace_id: "ws-2" })
+    : undefined;
+
+  const obs = driver.deriveObservations(normalRun, adverseRun, dupRun, degradedRun, isolationRun);
   const merged = { ...obs, ...extraObs };
   const v = new ManifestValidator();
   const schemaResult = v.check(manifest);
@@ -178,6 +193,50 @@ test("T11: trace_id propagation — trace_id present in all audit entries", () =
   assert.ok(
     t11.observation!.detail!.includes("test-trace-001"),
     `Expected trace_id in detail, got: ${t11.observation!.detail}`,
+  );
+});
+
+test("T08: signal deduplication — duplicate delivery detected across runs with same trace_id", () => {
+  const { report } = runWithDriver(graphonomous);
+  const t08 = report.results.find((r) => r.id === "T08")!;
+  assert.ok(t08, "T08 result must exist");
+  assert.equal(t08.status, "pass", `T08 status: ${t08.rationale}`);
+  assert.equal(t08.evidence_rung, "in_tree", "loop-driver observation → in_tree");
+  assert.ok(t08.observation, "T08 must have an observation");
+  assert.equal(t08.observation!.source, "loop-driver");
+  assert.ok(
+    t08.observation!.detail!.includes("duplicate") || t08.observation!.detail!.includes("signal"),
+    `Expected dedup detail, got: ${t08.observation!.detail}`,
+  );
+});
+
+test("T09: substrate degradation — graceful fallback for null substrate", () => {
+  // Graphonomous has substrates.time = null
+  const { report } = runWithDriver(graphonomous);
+  const t09 = report.results.find((r) => r.id === "T09")!;
+  assert.ok(t09, "T09 result must exist");
+  assert.equal(t09.status, "pass", `T09 status: ${t09.rationale}`);
+  assert.equal(t09.evidence_rung, "in_tree", "loop-driver observation → in_tree");
+  assert.ok(t09.observation, "T09 must have an observation");
+  assert.equal(t09.observation!.source, "loop-driver");
+  assert.ok(
+    t09.observation!.detail!.includes("degraded") || t09.observation!.detail!.includes("time"),
+    `Expected degradation detail, got: ${t09.observation!.detail}`,
+  );
+});
+
+test("T10: multi-tenant isolation — workspace-scoped runs maintain state isolation", () => {
+  // Graphonomous has workspace_scope: "required"
+  const { report } = runWithDriver(graphonomous);
+  const t10 = report.results.find((r) => r.id === "T10")!;
+  assert.ok(t10, "T10 result must exist");
+  assert.equal(t10.status, "pass", `T10 status: ${t10.rationale}`);
+  assert.equal(t10.evidence_rung, "in_tree", "loop-driver observation → in_tree");
+  assert.ok(t10.observation, "T10 must have an observation");
+  assert.equal(t10.observation!.source, "loop-driver");
+  assert.ok(
+    t10.observation!.detail!.includes("ws-1") && t10.observation!.detail!.includes("ws-2"),
+    `Expected workspace detail, got: ${t10.observation!.detail}`,
   );
 });
 

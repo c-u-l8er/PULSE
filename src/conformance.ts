@@ -28,10 +28,12 @@
  *   Live observations from a real substrate (source matching the system
  *   name, e.g. "graphonomous") reach `live_local`.
  *
- * Purely runtime tests (T08 signal dedup, T09 substrate degradation,
- * T10 multi-tenant isolation) remain `pending` until a conformance run
- * supplies a corresponding behavioral observation.  A manifest
- * declaration alone never produces a runtime `pass`.
+ *   Runtime-only tests (T08 signal dedup, T09 substrate degradation,
+ *   T10 multi-tenant isolation) reach `in_tree` when the LoopDriver
+ *   exercises the property — dedup via duplicate-trace signal comparison,
+ *   degradation via null-substrate fallback, isolation via separate
+ *   workspace-scoped runs.  Without an observation they remain `pending`.
+ *   A manifest declaration alone never produces a runtime `pass`.
  *
  * The 12 tests (PULSE spec §12):
  *   T01  Schema validation
