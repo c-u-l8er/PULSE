@@ -577,3 +577,111 @@ function t12VersionMonotonicity(manifest: Manifest): TestResult {
       : `unexpected pulse_protocol_version=${ver}; expected 0.1.x`,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Coverage matrix — property-by-property successful + adverse observations
+// ---------------------------------------------------------------------------
+
+/** Status of one observation (successful or adverse) for a runtime property. */
+export type ObservationStatus =
+  | { observed: true; evidence_rung: EvidenceRung; detail: string }
+  | { observed: false; reason: string };
+
+/** Coverage entry for a single runtime property. */
+export interface PropertyCoverage {
+  /** Human-readable property name (e.g. "atomicity"). */
+  property: string;
+  /** Conformance test id (e.g. "T02"). */
+  test_id: string;
+  /** Whether a successful (happy-path) observation was supplied. */
+  successful: ObservationStatus;
+  /** Whether an adverse (failure/violation) observation was supplied. */
+  adverse: ObservationStatus;
+}
+
+/** Summary counts for the coverage matrix. */
+export interface CoverageMatrixSummary {
+  /** Number of properties with at least one observation (successful or adverse). */
+  observed: number;
+  /** Number of properties with no observation at all. */
+  pending: number;
+  /** Total number of runtime properties in the matrix. */
+  total: number;
+}
+
+/** Full coverage matrix: one row per runtime property. */
+export interface CoverageMatrix {
+  properties: PropertyCoverage[];
+  summary: CoverageMatrixSummary;
+}
+
+/**
+ * The 10 runtime properties mapped by test id.
+ * T01 and T12 are manifest-only checks and do not appear in the matrix.
+ */
+const RUNTIME_PROPERTIES: { test_id: string; property: string }[] = [
+  { test_id: "T02", property: "atomicity" },
+  { test_id: "T03", property: "idempotency" },
+  { test_id: "T04", property: "nesting_waits" },
+  { test_id: "T05", property: "routing" },
+  { test_id: "T06", property: "quorum" },
+  { test_id: "T07", property: "append_only_audit" },
+  { test_id: "T08", property: "signal_dedup" },
+  { test_id: "T09", property: "degradation" },
+  { test_id: "T10", property: "tenant_isolation" },
+  { test_id: "T11", property: "trace_propagation" },
+];
+
+/**
+ * Build a property-by-property coverage matrix from conformance results
+ * and explicit adverse observations.
+ *
+ * `successfulObs` — observations from the normal/happy-path run (keyed by test id).
+ * `adverseObs`    — observations from adverse/failure runs (keyed by test id).
+ *
+ * A property is "observed" if it has at least a successful OR adverse observation.
+ * A property is "pending" if neither was supplied.
+ */
+export function buildCoverageMatrix(
+  report: ConformanceReport,
+  successfulObs: RuntimeObservations,
+  adverseObs: RuntimeObservations,
+): CoverageMatrix {
+  const properties: PropertyCoverage[] = RUNTIME_PROPERTIES.map(({ test_id, property }) => {
+    const result = report.results.find((r) => r.id === test_id);
+    const sObs = successfulObs[test_id];
+    const aObs = adverseObs[test_id];
+
+    // If the test passed without a runtime observation (e.g. invariant not
+    // claimed, so the property is not applicable), treat the manifest-level
+    // pass as a successful observation at the manifest's evidence rung.
+    const successful: ObservationStatus = sObs
+      ? { observed: true, evidence_rung: evidenceRungFor(sObs), detail: sObs.detail ?? sObs.behavior }
+      : result && result.status === "pass" && !result.observation
+        ? { observed: true, evidence_rung: result.evidence_rung, detail: result.rationale }
+        : { observed: false, reason: result?.status === "pending"
+            ? (result.rationale ?? `no successful observation for ${property}`)
+            : `no successful observation supplied for ${property}` };
+
+    const adverse: ObservationStatus = aObs
+      ? { observed: true, evidence_rung: evidenceRungFor(aObs), detail: aObs.detail ?? aObs.behavior }
+      : { observed: false, reason: `no adverse observation supplied for ${property}` };
+
+    return { property, test_id, successful, adverse };
+  });
+
+  let observed = 0;
+  let pending = 0;
+  for (const p of properties) {
+    if (p.successful.observed || p.adverse.observed) {
+      observed++;
+    } else {
+      pending++;
+    }
+  }
+
+  return {
+    properties,
+    summary: { observed, pending, total: properties.length },
+  };
+}
