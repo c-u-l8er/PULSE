@@ -147,6 +147,7 @@ const VERIFIED_SUBSTRATES = new Set([
   "agentromatic",
   "body-browser",
   "body-os",
+  "pulse",
 ]);
 
 /**
