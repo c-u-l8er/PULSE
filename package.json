@@ -29,6 +29,8 @@
     "build": "tsc",
     "start": "node bin/os-pulse.js --help",
     "test": "node --test --experimental-strip-types test/*.test.ts",
+    "conformance:deployed": "node bin/conformance-deployed.js",
+    "verify:deployed-report": "node bin/verify-deployed-report.js",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
