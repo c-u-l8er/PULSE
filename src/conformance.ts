@@ -7,19 +7,31 @@
  *
  * Evidence rungs (from the [&] evidence ladder):
  *   `spec`          — specified/schema'd, no implementation observed
- *   `in_tree`       — tested against stubs or manifest declarations only
+ *   `in_tree`       — tested against stubs, manifest declarations, or
+ *                      in-process loop simulation (e.g. LoopDriver)
  *   `live_local`    — exercised against a real substrate on a developer machine
  *   `live_deployed` — runs in production and exercised there
  *   `external`      — validated by someone who is not us
  *
- * Manifest-level checks (T01, T04, T05, T06, T07, T12) can reach `in_tree`
- * when the manifest structure is sufficient to decide the verdict.  Tests
- * requiring runtime behavior (T02, T03, T08, T09, T10, and the runtime
- * halves of T05/T06/T07/T11) remain `pending` until a conformance run
- * supplies a corresponding behavioral observation from a running inner
- * loop.  Runtime observations supplied by the caller are attached to the
- * result when present; a manifest declaration alone never produces a
- * runtime `pass`.
+ * Three categories of evidence:
+ *
+ *   Manifest checks (T01, T04, T05, T06, T07, T12) reach `in_tree` when
+ *   the manifest structure is sufficient to decide the verdict.
+ *
+ *   Behavioral observations from LoopDriver (T02, T03, T04, T05, T06,
+ *   T07, T11) reach `in_tree` when the in-process loop simulation
+ *   exercises the property — atomicity via failure injection, idempotency
+ *   via replay, κ-routing via route-phase execution, quorum via policy
+ *   check audit, append-only audit via monotonic log verification, and
+ *   trace_id propagation via cross-phase trace verification.
+ *
+ *   Live observations from a real substrate (source matching the system
+ *   name, e.g. "graphonomous") reach `live_local`.
+ *
+ * Purely runtime tests (T08 signal dedup, T09 substrate degradation,
+ * T10 multi-tenant isolation) remain `pending` until a conformance run
+ * supplies a corresponding behavioral observation.  A manifest
+ * declaration alone never produces a runtime `pass`.
  *
  * The 12 tests (PULSE spec §12):
  *   T01  Schema validation
@@ -85,6 +97,17 @@ type Manifest = Record<string, any>;
 
 /** Optional runtime observations keyed by test id (e.g. "T02"). */
 export type RuntimeObservations = Partial<Record<string, RuntimeObservation>>;
+
+/**
+ * Sources that are in-process simulations, not live substrates.
+ * Observations from these produce `in_tree`; real system names
+ * (e.g. "graphonomous", "prism") produce `live_local`.
+ */
+const SIMULATION_SOURCES = new Set(["mock", "loop-driver", "stub", "test"]);
+
+function evidenceRungFor(obs: RuntimeObservation): EvidenceRung {
+  return SIMULATION_SOURCES.has(obs.source) ? "in_tree" : "live_local";
+}
 
 function computeCounts(results: TestResult[]): StatusCounts {
   const counts: StatusCounts = { pass: 0, fail: 0, pending: 0, total: results.length };
@@ -164,7 +187,7 @@ function t02Atomicity(manifest: Manifest, obs?: RuntimeObservation): TestResult 
       id: "T02",
       title: "Phase atomicity",
       status: obs.success ? "pass" : "fail",
-      evidence_rung: obs.source === "mock" ? "in_tree" : "live_local",
+      evidence_rung: evidenceRungFor(obs),
       rationale: obs.success
         ? `Phase atomicity observed: ${obs.detail ?? obs.behavior}`
         : `Phase atomicity violation: ${obs.detail ?? obs.behavior}`,
@@ -194,7 +217,7 @@ function t03Idempotency(manifest: Manifest, obs?: RuntimeObservation): TestResul
       id: "T03",
       title: "Phase idempotency",
       status: obs.success ? "pass" : "fail",
-      evidence_rung: obs.source === "mock" ? "in_tree" : "live_local",
+      evidence_rung: evidenceRungFor(obs),
       rationale: obs.success
         ? `Phase idempotency observed: ${obs.detail ?? obs.behavior}`
         : `Phase idempotency violation: ${obs.detail ?? obs.behavior}`,
@@ -242,7 +265,7 @@ function t04NestingWaits(manifest: Manifest, obs?: RuntimeObservation): TestResu
       id: "T04",
       title: "Nesting waits",
       status: obs.success ? "pass" : "fail",
-      evidence_rung: obs.source === "mock" ? "in_tree" : "live_local",
+      evidence_rung: evidenceRungFor(obs),
       rationale: obs.success
         ? `Nesting wait observed: ${obs.detail ?? obs.behavior}`
         : `Nesting wait violation: ${obs.detail ?? obs.behavior}`,
@@ -286,7 +309,7 @@ function t05KappaRouting(manifest: Manifest, obs?: RuntimeObservation): TestResu
       id: "T05",
       title: "κ-routing",
       status: obs.success ? "pass" : "fail",
-      evidence_rung: obs.source === "mock" ? "in_tree" : "live_local",
+      evidence_rung: evidenceRungFor(obs),
       rationale: obs.success
         ? `κ-routing observed: ${obs.detail ?? obs.behavior}`
         : `κ-routing failure: ${obs.detail ?? obs.behavior}`,
@@ -331,7 +354,7 @@ function t06Quorum(manifest: Manifest, obs?: RuntimeObservation): TestResult {
       id: "T06",
       title: "Quorum before commit",
       status: obs.success ? "pass" : "fail",
-      evidence_rung: obs.source === "mock" ? "in_tree" : "live_local",
+      evidence_rung: evidenceRungFor(obs),
       rationale: obs.success
         ? `Quorum enforcement observed: ${obs.detail ?? obs.behavior}`
         : `Quorum enforcement failure: ${obs.detail ?? obs.behavior}`,
@@ -380,7 +403,7 @@ function t07AppendOnlyAudit(manifest: Manifest, obs?: RuntimeObservation): TestR
       id: "T07",
       title: "Append-only audit",
       status: obs.success ? "pass" : "fail",
-      evidence_rung: obs.source === "mock" ? "in_tree" : "live_local",
+      evidence_rung: evidenceRungFor(obs),
       rationale: obs.success
         ? `Append-only audit observed: ${obs.detail ?? obs.behavior}`
         : `Append-only audit violation: ${obs.detail ?? obs.behavior}`,
@@ -403,7 +426,7 @@ function t08Dedup(obs?: RuntimeObservation): TestResult {
       id: "T08",
       title: "Signal deduplication",
       status: obs.success ? "pass" : "fail",
-      evidence_rung: obs.source === "mock" ? "in_tree" : "live_local",
+      evidence_rung: evidenceRungFor(obs),
       rationale: obs.success
         ? `Signal dedup observed: ${obs.detail ?? obs.behavior}`
         : `Signal dedup failure: ${obs.detail ?? obs.behavior}`,
@@ -438,7 +461,7 @@ function t09Degradation(manifest: Manifest, obs?: RuntimeObservation): TestResul
       id: "T09",
       title: "Substrate degradation",
       status: obs.success ? "pass" : "fail",
-      evidence_rung: obs.source === "mock" ? "in_tree" : "live_local",
+      evidence_rung: evidenceRungFor(obs),
       rationale: obs.success
         ? `Substrate degradation observed: ${obs.detail ?? obs.behavior}`
         : `Substrate degradation failure: ${obs.detail ?? obs.behavior}`,
@@ -471,7 +494,7 @@ function t10TenantIsolation(manifest: Manifest, obs?: RuntimeObservation): TestR
       id: "T10",
       title: "Multi-tenant isolation",
       status: obs.success ? "pass" : "fail",
-      evidence_rung: obs.source === "mock" ? "in_tree" : "live_local",
+      evidence_rung: evidenceRungFor(obs),
       rationale: obs.success
         ? `Tenant isolation observed: ${obs.detail ?? obs.behavior}`
         : `Tenant isolation violation: ${obs.detail ?? obs.behavior}`,
@@ -507,7 +530,7 @@ function t11TraceIdProp(manifest: Manifest, obs?: RuntimeObservation): TestResul
       id: "T11",
       title: "trace_id propagation",
       status: obs.success ? "pass" : "fail",
-      evidence_rung: obs.source === "mock" ? "in_tree" : "live_local",
+      evidence_rung: evidenceRungFor(obs),
       rationale: obs.success
         ? `trace_id propagation observed: ${obs.detail ?? obs.behavior}`
         : `trace_id propagation failure: ${obs.detail ?? obs.behavior}`,
