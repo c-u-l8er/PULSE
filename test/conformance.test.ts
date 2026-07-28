@@ -257,3 +257,62 @@ test("ceTypeFor derives canonical and vendor CloudEvents types", () => {
   );
   assert.throws(() => ceTypeFor("not-a-token"));
 });
+
+// --- substrate provenance allowlist -----------------------------------------
+
+test("arbitrary non-simulation source cannot elevate to live_local", () => {
+  const v = new ManifestValidator();
+  const runtimeManifest = {
+    ...MINIMAL_MANIFEST,
+    invariants: {
+      ...MINIMAL_MANIFEST.invariants,
+      phase_atomicity: true,
+    },
+  };
+  const schemaResult = v.check(runtimeManifest);
+  // An unknown source string that is not in VERIFIED_SUBSTRATES should
+  // produce in_tree, not live_local — even though it is also not a
+  // known simulation name.
+  for (const bogus of ["banana", "my-system", "GRAPHONOMOUS", "Prism", ""]) {
+    const obs: RuntimeObservation = {
+      behavior: "phase failure triggers rollback",
+      success: true,
+      source: bogus,
+      detail: "observation from unverified source",
+    };
+    const report = runConformance(runtimeManifest, schemaResult, { T02: obs });
+    const t02 = report.results.find((r) => r.id === "T02")!;
+    assert.equal(
+      t02.evidence_rung,
+      "in_tree",
+      `source '${bogus}' must not reach live_local`,
+    );
+  }
+});
+
+test("verified substrate sources produce live_local", () => {
+  const v = new ManifestValidator();
+  const runtimeManifest = {
+    ...MINIMAL_MANIFEST,
+    invariants: {
+      ...MINIMAL_MANIFEST.invariants,
+      phase_atomicity: true,
+    },
+  };
+  const schemaResult = v.check(runtimeManifest);
+  for (const real of ["graphonomous", "prism", "agentromatic", "body-browser", "body-os"]) {
+    const obs: RuntimeObservation = {
+      behavior: "phase failure triggers rollback",
+      success: true,
+      source: real,
+      detail: "observation from verified substrate",
+    };
+    const report = runConformance(runtimeManifest, schemaResult, { T02: obs });
+    const t02 = report.results.find((r) => r.id === "T02")!;
+    assert.equal(
+      t02.evidence_rung,
+      "live_local",
+      `source '${real}' should reach live_local`,
+    );
+  }
+});

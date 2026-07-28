@@ -25,8 +25,9 @@
  *   check audit, append-only audit via monotonic log verification, and
  *   trace_id propagation via cross-phase trace verification.
  *
- *   Live observations from a real substrate (source matching the system
- *   name, e.g. "graphonomous") reach `live_local`.
+ *   Live observations from a verified substrate (source in the
+ *   VERIFIED_SUBSTRATES allowlist, e.g. "graphonomous") reach
+ *   `live_local`.  Unknown source strings resolve to `in_tree`.
  *
  *   Runtime-only tests (T08 signal dedup, T09 substrate degradation,
  *   T10 multi-tenant isolation) reach `in_tree` when the LoopDriver
@@ -65,7 +66,9 @@ export interface RuntimeObservation {
   behavior: string;
   /** Whether the observation succeeded. */
   success: boolean;
-  /** Source of the observation (e.g. "mock", "graphonomous", "prism"). */
+  /** Source of the observation.  Only sources in VERIFIED_SUBSTRATES
+   *  (e.g. "graphonomous", "prism") produce `live_local` evidence;
+   *  all others (including "mock", "loop-driver") produce `in_tree`. */
   source: string;
   /** Optional detail about what was missing or what failed. */
   detail?: string;
@@ -101,14 +104,24 @@ type Manifest = Record<string, any>;
 export type RuntimeObservations = Partial<Record<string, RuntimeObservation>>;
 
 /**
- * Sources that are in-process simulations, not live substrates.
- * Observations from these produce `in_tree`; real system names
- * (e.g. "graphonomous", "prism") produce `live_local`.
+ * Substrates whose provenance has been verified against reference manifests
+ * in `manifests/`.  Only observations whose `source` matches one of these
+ * names may reach `live_local`; every other source — including unknown
+ * strings — resolves to `in_tree` at most.
+ *
+ * This is an allowlist, not a denylist: an arbitrary non-simulation source
+ * string cannot elevate evidence.
  */
-const SIMULATION_SOURCES = new Set(["mock", "loop-driver", "stub", "test"]);
+const VERIFIED_SUBSTRATES = new Set([
+  "graphonomous",
+  "prism",
+  "agentromatic",
+  "body-browser",
+  "body-os",
+]);
 
 function evidenceRungFor(obs: RuntimeObservation): EvidenceRung {
-  return SIMULATION_SOURCES.has(obs.source) ? "in_tree" : "live_local";
+  return VERIFIED_SUBSTRATES.has(obs.source) ? "live_local" : "in_tree";
 }
 
 function computeCounts(results: TestResult[]): StatusCounts {

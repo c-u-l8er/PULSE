@@ -5,8 +5,8 @@
  * This spawns a Graphonomous v0.4 MCP server as a child process, sends
  * JSON-RPC tool calls for all 5 canonical phases (retrieve, route, act,
  * learn, consolidate), and derives RuntimeObservations with
- * `source: "graphonomous"`.  Because the source is not in SIMULATION_SOURCES,
- * conformance.ts maps these to evidence rung `live_local`.
+ * `source: "graphonomous"`.  Because "graphonomous" is in the
+ * VERIFIED_SUBSTRATES allowlist, conformance.ts maps these to `live_local`.
  *
  * If the `graphonomous` binary is not available, all affected tests stay
  * `pending` with a rationale naming the unavailable executable.
