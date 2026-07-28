@@ -316,3 +316,288 @@ test("verified substrate sources produce live_local", () => {
     );
   }
 });
+
+// --- deployment provenance for live_deployed ---------------------------------
+
+import {
+  validateDeploymentProvenance,
+  type DeploymentProvenance,
+} from "../src/conformance.ts";
+
+/** A valid deployment provenance for testing. */
+const VALID_PROVENANCE: DeploymentProvenance = {
+  endpoint_url: "https://graphonomous.fly.dev/mcp",
+  identity: "graphonomous-mcp-v0.4",
+  version: "0.4.0",
+  request_id: "req-abc-123",
+  observed_at: "2026-07-28T12:00:00Z",
+  configured_endpoint: "https://graphonomous.fly.dev",
+};
+
+test("valid deployment provenance with verified substrate reaches live_deployed", () => {
+  const v = new ManifestValidator();
+  const runtimeManifest = {
+    ...MINIMAL_MANIFEST,
+    invariants: {
+      ...MINIMAL_MANIFEST.invariants,
+      phase_atomicity: true,
+    },
+  };
+  const schemaResult = v.check(runtimeManifest);
+  const obs: RuntimeObservation = {
+    behavior: "phase failure triggers rollback",
+    success: true,
+    source: "graphonomous",
+    detail: "observation from deployed substrate",
+    deployment_provenance: VALID_PROVENANCE,
+  };
+  const report = runConformance(runtimeManifest, schemaResult, { T02: obs });
+  const t02 = report.results.find((r) => r.id === "T02")!;
+  assert.equal(
+    t02.evidence_rung,
+    "live_deployed",
+    "verified substrate + valid deployment provenance → live_deployed",
+  );
+});
+
+test("source string alone cannot reach live_deployed without deployment provenance", () => {
+  const v = new ManifestValidator();
+  const runtimeManifest = {
+    ...MINIMAL_MANIFEST,
+    invariants: {
+      ...MINIMAL_MANIFEST.invariants,
+      phase_atomicity: true,
+    },
+  };
+  const schemaResult = v.check(runtimeManifest);
+  // Even a verified substrate source cannot reach live_deployed without provenance
+  for (const src of ["graphonomous", "prism", "agentromatic"]) {
+    const obs: RuntimeObservation = {
+      behavior: "phase failure triggers rollback",
+      success: true,
+      source: src,
+      detail: "no deployment provenance attached",
+      // no deployment_provenance field
+    };
+    const report = runConformance(runtimeManifest, schemaResult, { T02: obs });
+    const t02 = report.results.find((r) => r.id === "T02")!;
+    assert.notEqual(
+      t02.evidence_rung,
+      "live_deployed",
+      `source '${src}' without deployment provenance must not reach live_deployed`,
+    );
+    assert.equal(
+      t02.evidence_rung,
+      "live_local",
+      `source '${src}' without provenance should stay at live_local`,
+    );
+  }
+});
+
+test("localhost endpoint cannot reach live_deployed", () => {
+  const v = new ManifestValidator();
+  const runtimeManifest = {
+    ...MINIMAL_MANIFEST,
+    invariants: {
+      ...MINIMAL_MANIFEST.invariants,
+      phase_atomicity: true,
+    },
+  };
+  const schemaResult = v.check(runtimeManifest);
+  const localhostUrls = [
+    "https://localhost:4000/mcp",
+    "https://127.0.0.1:4000/mcp",
+    "https://[::1]:4000/mcp",
+    "https://0.0.0.0:4000/mcp",
+    "https://LOCALHOST:4000/mcp",
+  ];
+  for (const url of localhostUrls) {
+    const obs: RuntimeObservation = {
+      behavior: "phase failure triggers rollback",
+      success: true,
+      source: "graphonomous",
+      detail: "localhost observation",
+      deployment_provenance: {
+        ...VALID_PROVENANCE,
+        endpoint_url: url,
+        configured_endpoint: url.replace("/mcp", ""),
+      },
+    };
+    const report = runConformance(runtimeManifest, schemaResult, { T02: obs });
+    const t02 = report.results.find((r) => r.id === "T02")!;
+    assert.notEqual(
+      t02.evidence_rung,
+      "live_deployed",
+      `localhost URL '${url}' must not reach live_deployed`,
+    );
+  }
+});
+
+test("http:// (non-TLS) endpoint cannot reach live_deployed", () => {
+  const v = new ManifestValidator();
+  const runtimeManifest = {
+    ...MINIMAL_MANIFEST,
+    invariants: {
+      ...MINIMAL_MANIFEST.invariants,
+      phase_atomicity: true,
+    },
+  };
+  const schemaResult = v.check(runtimeManifest);
+  const obs: RuntimeObservation = {
+    behavior: "phase failure triggers rollback",
+    success: true,
+    source: "graphonomous",
+    detail: "http observation",
+    deployment_provenance: {
+      ...VALID_PROVENANCE,
+      endpoint_url: "http://graphonomous.fly.dev/mcp",
+      configured_endpoint: "http://graphonomous.fly.dev",
+    },
+  };
+  const report = runConformance(runtimeManifest, schemaResult, { T02: obs });
+  const t02 = report.results.find((r) => r.id === "T02")!;
+  assert.notEqual(
+    t02.evidence_rung,
+    "live_deployed",
+    "http:// endpoint must not reach live_deployed",
+  );
+});
+
+test("missing identity in deployment provenance cannot reach live_deployed", () => {
+  const v = new ManifestValidator();
+  const runtimeManifest = {
+    ...MINIMAL_MANIFEST,
+    invariants: {
+      ...MINIMAL_MANIFEST.invariants,
+      phase_atomicity: true,
+    },
+  };
+  const schemaResult = v.check(runtimeManifest);
+  for (const badIdentity of ["", "  ", undefined as any]) {
+    const obs: RuntimeObservation = {
+      behavior: "phase failure triggers rollback",
+      success: true,
+      source: "graphonomous",
+      detail: "missing identity",
+      deployment_provenance: {
+        ...VALID_PROVENANCE,
+        identity: badIdentity ?? "",
+      },
+    };
+    const report = runConformance(runtimeManifest, schemaResult, { T02: obs });
+    const t02 = report.results.find((r) => r.id === "T02")!;
+    assert.notEqual(
+      t02.evidence_rung,
+      "live_deployed",
+      `empty/missing identity '${badIdentity}' must not reach live_deployed`,
+    );
+    // Should fall back to live_local since source is verified
+    assert.equal(
+      t02.evidence_rung,
+      "live_local",
+      `empty identity should downgrade to live_local, not further`,
+    );
+  }
+});
+
+test("mismatched provenance (endpoint vs configured_endpoint) cannot reach live_deployed", () => {
+  const v = new ManifestValidator();
+  const runtimeManifest = {
+    ...MINIMAL_MANIFEST,
+    invariants: {
+      ...MINIMAL_MANIFEST.invariants,
+      phase_atomicity: true,
+    },
+  };
+  const schemaResult = v.check(runtimeManifest);
+  const obs: RuntimeObservation = {
+    behavior: "phase failure triggers rollback",
+    success: true,
+    source: "graphonomous",
+    detail: "mismatched endpoint",
+    deployment_provenance: {
+      ...VALID_PROVENANCE,
+      endpoint_url: "https://graphonomous.fly.dev/mcp",
+      configured_endpoint: "https://different-host.fly.dev",
+    },
+  };
+  const report = runConformance(runtimeManifest, schemaResult, { T02: obs });
+  const t02 = report.results.find((r) => r.id === "T02")!;
+  assert.notEqual(
+    t02.evidence_rung,
+    "live_deployed",
+    "mismatched endpoint/configured_endpoint must not reach live_deployed",
+  );
+  assert.equal(
+    t02.evidence_rung,
+    "live_local",
+    "mismatched provenance should downgrade to live_local",
+  );
+});
+
+test("unverified substrate source with valid provenance cannot reach live_deployed", () => {
+  const v = new ManifestValidator();
+  const runtimeManifest = {
+    ...MINIMAL_MANIFEST,
+    invariants: {
+      ...MINIMAL_MANIFEST.invariants,
+      phase_atomicity: true,
+    },
+  };
+  const schemaResult = v.check(runtimeManifest);
+  // Source is not in VERIFIED_SUBSTRATES — even with valid provenance, stays in_tree
+  for (const src of ["mock", "banana", "GRAPHONOMOUS", "loop-driver", ""]) {
+    const obs: RuntimeObservation = {
+      behavior: "phase failure triggers rollback",
+      success: true,
+      source: src,
+      detail: "unverified source with provenance",
+      deployment_provenance: VALID_PROVENANCE,
+    };
+    const report = runConformance(runtimeManifest, schemaResult, { T02: obs });
+    const t02 = report.results.find((r) => r.id === "T02")!;
+    assert.equal(
+      t02.evidence_rung,
+      "in_tree",
+      `unverified source '${src}' with provenance must stay at in_tree`,
+    );
+  }
+});
+
+test("validateDeploymentProvenance returns null for valid provenance", () => {
+  const result = validateDeploymentProvenance(VALID_PROVENANCE);
+  assert.equal(result, null, `expected null, got: ${result}`);
+});
+
+test("validateDeploymentProvenance returns error for each invalid field", () => {
+  // Missing HTTPS
+  assert.notEqual(
+    validateDeploymentProvenance({ ...VALID_PROVENANCE, endpoint_url: "http://example.com" }),
+    null,
+  );
+  // Localhost
+  assert.notEqual(
+    validateDeploymentProvenance({ ...VALID_PROVENANCE, endpoint_url: "https://localhost/x" }),
+    null,
+  );
+  // Empty identity
+  assert.notEqual(
+    validateDeploymentProvenance({ ...VALID_PROVENANCE, identity: "" }),
+    null,
+  );
+  // Missing configured_endpoint
+  assert.notEqual(
+    validateDeploymentProvenance({ ...VALID_PROVENANCE, configured_endpoint: "" }),
+    null,
+  );
+  // Mismatched
+  assert.notEqual(
+    validateDeploymentProvenance({ ...VALID_PROVENANCE, configured_endpoint: "https://other.dev" }),
+    null,
+  );
+  // Missing observed_at
+  assert.notEqual(
+    validateDeploymentProvenance({ ...VALID_PROVENANCE, observed_at: "" }),
+    null,
+  );
+});

@@ -61,6 +61,31 @@ export type EvidenceRung =
   | "live_deployed"
   | "external";
 
+/**
+ * Structured deployment provenance tied to a configured HTTPS endpoint.
+ *
+ * `live_deployed` requires ALL of:
+ *   1. `endpoint_url` is an `https://` URL (not localhost, not http://)
+ *   2. `identity` is a non-empty string returned by the deployed service
+ *   3. `endpoint_url` starts with the configured `configured_endpoint` prefix
+ *
+ * Missing, empty, or mismatched fields cause an explicit downgrade.
+ */
+export interface DeploymentProvenance {
+  /** The HTTPS URL that was actually called. */
+  endpoint_url: string;
+  /** Identity string returned by the deployed service (e.g. server name, app id). */
+  identity: string;
+  /** Version string returned by the deployed service, if any. */
+  version?: string;
+  /** Deployment/request identifier returned in response headers or body. */
+  request_id?: string;
+  /** UTC ISO-8601 timestamp of when the observation was made. */
+  observed_at: string;
+  /** The configured endpoint prefix this observation is verified against. */
+  configured_endpoint: string;
+}
+
 export interface RuntimeObservation {
   /** What behavior was observed or attempted. */
   behavior: string;
@@ -68,10 +93,14 @@ export interface RuntimeObservation {
   success: boolean;
   /** Source of the observation.  Only sources in VERIFIED_SUBSTRATES
    *  (e.g. "graphonomous", "prism") produce `live_local` evidence;
-   *  all others (including "mock", "loop-driver") produce `in_tree`. */
+   *  all others (including "mock", "loop-driver") produce `in_tree`.
+   *  `live_deployed` additionally requires verified `deployment_provenance`. */
   source: string;
   /** Optional detail about what was missing or what failed. */
   detail?: string;
+  /** Structured deployment provenance.  Required for `live_deployed`;
+   *  verified against the configured HTTPS endpoint and response metadata. */
+  deployment_provenance?: DeploymentProvenance;
 }
 
 export interface TestResult {
@@ -120,7 +149,62 @@ const VERIFIED_SUBSTRATES = new Set([
   "body-os",
 ]);
 
+/**
+ * Validate deployment provenance for `live_deployed` eligibility.
+ *
+ * Returns `null` when valid, or a string naming the specific disqualification.
+ * Each check is explicit so adverse tests can target individual failure modes.
+ */
+export function validateDeploymentProvenance(
+  prov: DeploymentProvenance,
+): string | null {
+  // 1. endpoint_url must be https://
+  if (!prov.endpoint_url || !prov.endpoint_url.startsWith("https://")) {
+    return `endpoint_url is not HTTPS: ${prov.endpoint_url ?? "(empty)"}`;
+  }
+  // 2. No localhost — deployed means remote
+  const urlLower = prov.endpoint_url.toLowerCase();
+  if (
+    urlLower.includes("://localhost") ||
+    urlLower.includes("://127.0.0.1") ||
+    urlLower.includes("://[::1]") ||
+    urlLower.includes("://0.0.0.0")
+  ) {
+    return `endpoint_url points to localhost: ${prov.endpoint_url}`;
+  }
+  // 3. identity must be non-empty
+  if (!prov.identity || prov.identity.trim().length === 0) {
+    return `identity is missing or empty`;
+  }
+  // 4. configured_endpoint must be non-empty
+  if (
+    !prov.configured_endpoint ||
+    prov.configured_endpoint.trim().length === 0
+  ) {
+    return `configured_endpoint is missing or empty`;
+  }
+  // 5. endpoint_url must start with configured_endpoint (provenance match)
+  if (!prov.endpoint_url.startsWith(prov.configured_endpoint)) {
+    return `endpoint_url '${prov.endpoint_url}' does not match configured_endpoint '${prov.configured_endpoint}'`;
+  }
+  // 6. observed_at must be a non-empty string (ISO timestamp)
+  if (!prov.observed_at || prov.observed_at.trim().length === 0) {
+    return `observed_at timestamp is missing or empty`;
+  }
+  return null;
+}
+
 function evidenceRungFor(obs: RuntimeObservation): EvidenceRung {
+  // Check for live_deployed first: requires verified substrate + valid
+  // deployment provenance from a configured HTTPS endpoint.
+  if (obs.deployment_provenance && VERIFIED_SUBSTRATES.has(obs.source)) {
+    const error = validateDeploymentProvenance(obs.deployment_provenance);
+    if (error === null) {
+      return "live_deployed";
+    }
+    // Provenance present but invalid → downgrade, do not silently elevate.
+    // The observation still qualifies for live_local via the substrate check.
+  }
   return VERIFIED_SUBSTRATES.has(obs.source) ? "live_local" : "in_tree";
 }
 
