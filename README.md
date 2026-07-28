@@ -83,20 +83,27 @@ Or in `.mcp.json`:
 ## Conformance suite (12 tests)
 
 1. **T01** Schema validation (authoritative — ajv against v0.1 schema)
-2. **T02** Phase atomicity
-3. **T03** Phase idempotency
-4. **T04** Nesting waits
-5. **T05** κ-routing
-6. **T06** Quorum before commit
-7. **T07** Append-only audit
-8. **T08** Signal deduplication (runtime-only — returns `pending`)
-9. **T09** Substrate degradation
-10. **T10** Multi-tenant isolation (runtime-only — returns `pending`)
-11. **T11** trace_id propagation
-12. **T12** Protocol version monotonicity
+2. **T02** Phase atomicity (runtime — observed via LoopDriver failure injection)
+3. **T03** Phase idempotency (runtime — observed via LoopDriver replay)
+4. **T04** Nesting waits (manifest + runtime)
+5. **T05** κ-routing (manifest + runtime — observed via route-phase execution)
+6. **T06** Quorum before commit (manifest + runtime — observed via policy check)
+7. **T07** Append-only audit (manifest + runtime — observed via log verification)
+8. **T08** Signal deduplication (runtime — observed via duplicate-trace comparison)
+9. **T09** Substrate degradation (runtime — observed via null-substrate fallback)
+10. **T10** Multi-tenant isolation (runtime — observed via workspace-scoped runs)
+11. **T11** trace_id propagation (manifest + runtime — observed via cross-phase trace)
+12. **T12** Protocol version monotonicity (manifest)
 
-Tests that require a running loop to observe runtime behavior return
-`pending` in v0.1. Manifest-level checks are exhaustive.
+Each test reports a verdict (`pass`, `fail`, or `pending`), an evidence rung
+(`spec`, `in_tree`, `live_local`, `live_deployed`, or `external`), and a
+rationale naming the observation or missing capability behind it.
+
+Manifest-level checks reach `in_tree`. Behavioral observations from the
+in-process LoopDriver also reach `in_tree`. Observations from a real
+substrate (e.g. Graphonomous, PRISM) reach `live_local`. Tests that lack the
+required observation remain `pending` with a rationale identifying the missing
+capability.
 
 ## Build from source
 
