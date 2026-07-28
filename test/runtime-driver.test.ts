@@ -16,6 +16,7 @@ import {
   KNOWN_LOOPS,
   type LoopProbeResult,
   type EvidenceRung,
+  type BehavioralObservation,
 } from "../src/runtime-driver.ts";
 
 const VALID_RUNGS: EvidenceRung[] = [
@@ -97,6 +98,9 @@ test("summarizeProbes counts sum to total", async () => {
   );
   assert.ok(summary.available >= 0);
   assert.ok(summary.available <= summary.total);
+  // Behavioral counts must be non-negative and sum correctly
+  assert.ok(summary.behavioral_observed >= 0);
+  assert.ok(summary.behavioral_pending >= 0);
 });
 
 test("loadManifest reads and parses a real manifest", async () => {
@@ -128,6 +132,46 @@ test("graphonomous probe reports phases when available", async () => {
     if (allInvoked) {
       assert.equal(result.evidence_rung, "live_local");
     }
+  }
+});
+
+test("graphonomous probe includes behavioral observations when available", async () => {
+  const result = await probeLoop("graphonomous.continual_learning");
+  if (result.available && result.evidence_rung === "live_local") {
+    // When all five phases succeed, behavioral probes must be present
+    assert.ok(
+      result.behavioral != null && result.behavioral.length > 0,
+      "live_local probe must include behavioral observations",
+    );
+    for (const obs of result.behavioral!) {
+      assert.ok(typeof obs.property === "string" && obs.property.length > 0);
+      assert.ok(typeof obs.observed === "boolean");
+      assert.ok(
+        VALID_RUNGS.includes(obs.evidence_rung),
+        `behavioral ${obs.property}: evidence_rung "${obs.evidence_rung}" not valid`,
+      );
+      assert.ok(typeof obs.detail === "string" && obs.detail.length > 0);
+      // observed=false must not claim live_local evidence
+      if (!obs.observed) {
+        assert.notEqual(
+          obs.evidence_rung,
+          "live_local",
+          `behavioral ${obs.property}: not observed but claims live_local`,
+        );
+      }
+    }
+    // Must include at least the idempotency and routing probes
+    const properties = result.behavioral!.map(
+      (b: BehavioralObservation) => b.property,
+    );
+    assert.ok(
+      properties.includes("phase_idempotency"),
+      "missing phase_idempotency behavioral observation",
+    );
+    assert.ok(
+      properties.includes("kappa_routing"),
+      "missing kappa_routing behavioral observation",
+    );
   }
 });
 
