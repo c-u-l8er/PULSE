@@ -19,6 +19,7 @@ import { openDatabase, type Handle } from "../src/db.ts";
 import { ManifestValidator } from "../src/schema.ts";
 import {
   runConformance,
+  validateDeployedEvidence,
   type ConformanceReport,
   type StatusCounts,
   type TestResult,
@@ -52,6 +53,7 @@ function registerManifest(
   db: Handle,
   manifest: any,
   observations?: RuntimeObservations,
+  deployedEvidence?: Record<string, any>,
 ): { report: ConformanceReport; schemaValid: boolean } {
   const result = validator.check(manifest);
   const report = runConformance(manifest, result, observations);
@@ -59,8 +61,9 @@ function registerManifest(
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO manifests
       (loop_id, version, pulse_protocol_version, owner, workspace_scope,
-       manifest_json, parent_loop_id, registered_at, conformance_status, conformance_report)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       manifest_json, parent_loop_id, registered_at, conformance_status,
+       conformance_report, deployed_evidence)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -74,6 +77,7 @@ function registerManifest(
     Math.floor(Date.now() / 1000),
     report.overall,
     JSON.stringify(report),
+    deployedEvidence ? JSON.stringify(deployedEvidence) : null,
   );
 
   // Insert connections
@@ -145,24 +149,35 @@ function readReport(
   db: Handle,
   loop_id: string,
   version?: string,
-): { conformance_status: string; report: ConformanceReport } | null {
+): {
+  conformance_status: string;
+  report: ConformanceReport;
+  deployed_evidence: Record<string, any> | null;
+} | null {
   const row = version
     ? db
         .prepare(
-          "SELECT conformance_status, conformance_report FROM manifests WHERE loop_id = ? AND version = ?",
+          "SELECT conformance_status, conformance_report, deployed_evidence FROM manifests WHERE loop_id = ? AND version = ?",
         )
         .get(loop_id, version)
     : db
         .prepare(
-          `SELECT conformance_status, conformance_report FROM manifests
+          `SELECT conformance_status, conformance_report, deployed_evidence FROM manifests
            WHERE loop_id = ? ORDER BY registered_at DESC LIMIT 1`,
         )
         .get(loop_id);
   if (!row) return null;
-  const r = row as { conformance_status: string; conformance_report: string };
+  const r = row as {
+    conformance_status: string;
+    conformance_report: string;
+    deployed_evidence: string | null;
+  };
   return {
     conformance_status: r.conformance_status,
     report: JSON.parse(r.conformance_report),
+    deployed_evidence: r.deployed_evidence
+      ? JSON.parse(r.deployed_evidence)
+      : null,
   };
 }
 
@@ -830,5 +845,313 @@ describe("measured counts in persisted reports", () => {
       "Pending count should decrease after adding observations",
     );
     db.close();
+  });
+});
+
+// ===================================================================
+// 10. Deployed evidence persistence and validation
+// ===================================================================
+
+/** Valid deployment provenance for test fixtures. */
+const VALID_PROVENANCE = {
+  endpoint_url: "https://graphonomous-mcp.fly.dev/mcp",
+  identity: "graphonomous",
+  version: "0.4.3",
+  request_id: "01KYN7WH6PT58B11BNM2WF494Y-dfw",
+  observed_at: "2026-07-28T20:50:29.816Z",
+  configured_endpoint: "https://graphonomous-mcp.fly.dev",
+};
+
+/** Build a well-formed deployed evidence object for testing. */
+function buildValidEvidence(): Record<string, any> {
+  const deployedObs = {
+    behavior: "act phase completed",
+    success: true,
+    source: "graphonomous",
+    detail: "act ok",
+    deployment_provenance: VALID_PROVENANCE,
+  };
+
+  return {
+    report_id: "test-evidence-001",
+    pulse_endpoint: "https://os-pulse-mcp.fly.dev",
+    graphonomous_endpoint: "https://graphonomous-mcp.fly.dev",
+    pulse_identity: { name: "os-pulse", version: "0.1.0" },
+    graphonomous_identity: { name: "graphonomous", version: "0.4.3" },
+    fly_request_ids: { pulse_health: "req-1", graphonomous_health: "req-2" },
+    started_at: "2026-07-28T20:50:29.148Z",
+    finished_at: "2026-07-28T20:50:30.399Z",
+    conformance: {
+      loop_id: "graphonomous.continual_learning",
+      version: "0.4.0",
+      overall: "pending",
+      counts: { pass: 9, fail: 0, pending: 3, total: 12 },
+      results: [
+        { id: "T01", title: "Schema validation", status: "pass", evidence_rung: "in_tree", rationale: "ok" },
+        { id: "T02", title: "Phase atomicity", status: "pass", evidence_rung: "live_deployed", rationale: "ok", observation: deployedObs },
+        { id: "T03", title: "Phase idempotency", status: "pass", evidence_rung: "live_deployed", rationale: "ok", observation: deployedObs },
+        { id: "T04", title: "Nesting waits", status: "pass", evidence_rung: "in_tree", rationale: "ok" },
+        { id: "T05", title: "κ-routing", status: "pass", evidence_rung: "live_deployed", rationale: "ok", observation: deployedObs },
+        { id: "T06", title: "Quorum before commit", status: "pass", evidence_rung: "in_tree", rationale: "ok" },
+        { id: "T07", title: "Append-only audit", status: "pass", evidence_rung: "live_deployed", rationale: "ok", observation: deployedObs },
+        { id: "T08", title: "Signal deduplication", status: "pending", evidence_rung: "spec", rationale: "no observation" },
+        { id: "T09", title: "Substrate degradation", status: "pending", evidence_rung: "spec", rationale: "no observation" },
+        { id: "T10", title: "Multi-tenant isolation", status: "pending", evidence_rung: "spec", rationale: "no observation" },
+        { id: "T11", title: "trace_id propagation", status: "pass", evidence_rung: "live_deployed", rationale: "ok", observation: deployedObs },
+        { id: "T12", title: "Protocol version monotonicity", status: "pass", evidence_rung: "in_tree", rationale: "ok" },
+      ],
+    },
+    phase_observations: [
+      { phase: "retrieve", kind: "retrieve", started_at: "2026-07-28T20:50:29.592Z", finished_at: "2026-07-28T20:50:29.657Z", success: true, redacted_request: {}, redacted_response: "ok" },
+      { phase: "route", kind: "route", started_at: "2026-07-28T20:50:29.660Z", finished_at: "2026-07-28T20:50:29.730Z", success: true, redacted_request: {}, redacted_response: "ok" },
+      { phase: "act", kind: "act", started_at: "2026-07-28T20:50:29.733Z", finished_at: "2026-07-28T20:50:29.810Z", success: true, redacted_request: {}, redacted_response: "ok" },
+      { phase: "learn", kind: "learn", started_at: "2026-07-28T20:50:29.813Z", finished_at: "2026-07-28T20:50:29.870Z", success: true, redacted_request: {}, redacted_response: "ok" },
+      { phase: "consolidate", kind: "consolidate", started_at: "2026-07-28T20:50:29.873Z", finished_at: "2026-07-28T20:50:29.930Z", success: true, redacted_request: {}, redacted_response: "ok" },
+    ],
+    phase_observation_counts: { total: 5, passed: 5, failed: 0 },
+    persistence: {
+      registered: true,
+      read_back: true,
+      read_back_loop_id: "graphonomous.continual_learning",
+      read_back_version: "0.4.0",
+      read_back_matches: true,
+    },
+    doctrine: {
+      assessment: "advanced",
+      claim: "runtime conformance on deployed endpoints",
+      old_rung: "live_local",
+      new_rung: "live_deployed",
+      evidence: "5/5 phases succeeded",
+    },
+    digest: "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+  };
+}
+
+describe("deployed evidence persistence", () => {
+  test("valid deployed evidence is persisted and retrievable", () => {
+    const db = freshDb();
+    const manifest = loadManifest("graphonomous.continual_learning.json");
+    const evidence = buildValidEvidence();
+
+    registerManifest(db, manifest, undefined, evidence);
+
+    const stored = readReport(db, manifest.loop_id)!;
+    assert.ok(stored.deployed_evidence, "deployed_evidence should be persisted");
+    assert.equal(stored.deployed_evidence!.report_id, "test-evidence-001");
+    assert.equal(
+      stored.deployed_evidence!.conformance.results.length,
+      12,
+    );
+    assert.equal(
+      stored.deployed_evidence!.phase_observations.length,
+      5,
+    );
+    assert.equal(
+      stored.deployed_evidence!.pulse_identity.name,
+      "os-pulse",
+    );
+    assert.equal(
+      stored.deployed_evidence!.graphonomous_identity.name,
+      "graphonomous",
+    );
+    assert.ok(
+      stored.deployed_evidence!.digest.startsWith("sha256:"),
+    );
+    db.close();
+  });
+
+  test("registration without deployed evidence leaves column null", () => {
+    const db = freshDb();
+    const manifest = loadManifest("graphonomous.continual_learning.json");
+
+    registerManifest(db, manifest);
+
+    const stored = readReport(db, manifest.loop_id)!;
+    assert.equal(stored.deployed_evidence, null);
+    db.close();
+  });
+
+  test("deployed evidence survives JSON round-trip through SQLite", () => {
+    const db = freshDb();
+    const manifest = loadManifest("graphonomous.continual_learning.json");
+    const evidence = buildValidEvidence();
+
+    registerManifest(db, manifest, undefined, evidence);
+
+    const stored = readReport(db, manifest.loop_id)!;
+    // Deep structural equality on key fields
+    assert.deepEqual(
+      stored.deployed_evidence!.phase_observation_counts,
+      evidence.phase_observation_counts,
+    );
+    assert.deepEqual(
+      stored.deployed_evidence!.doctrine,
+      evidence.doctrine,
+    );
+    assert.deepEqual(
+      stored.deployed_evidence!.persistence,
+      evidence.persistence,
+    );
+    // Verify each phase observation survived
+    for (let i = 0; i < 5; i++) {
+      assert.equal(
+        stored.deployed_evidence!.phase_observations[i].phase,
+        evidence.phase_observations[i].phase,
+      );
+      assert.equal(
+        stored.deployed_evidence!.phase_observations[i].success,
+        evidence.phase_observations[i].success,
+      );
+    }
+    db.close();
+  });
+
+  test("re-registration replaces deployed evidence", () => {
+    const db = freshDb();
+    const manifest = loadManifest("graphonomous.continual_learning.json");
+
+    // First: without evidence
+    registerManifest(db, manifest);
+    const first = readReport(db, manifest.loop_id)!;
+    assert.equal(first.deployed_evidence, null);
+
+    // Second: with evidence
+    const evidence = buildValidEvidence();
+    registerManifest(db, manifest, undefined, evidence);
+    const second = readReport(db, manifest.loop_id)!;
+    assert.ok(second.deployed_evidence);
+    assert.equal(second.deployed_evidence!.report_id, "test-evidence-001");
+    db.close();
+  });
+});
+
+// ===================================================================
+// 11. Deployed evidence validation: rejection of malformed evidence
+// ===================================================================
+
+describe("deployed evidence validation rejects malformed evidence", () => {
+  test("rejects evidence missing report_id", () => {
+    const evidence = buildValidEvidence();
+    delete evidence.report_id;
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors, "should return errors");
+    assert.ok(errors!.some((e) => e.includes("report_id")));
+  });
+
+  test("rejects evidence missing digest", () => {
+    const evidence = buildValidEvidence();
+    delete evidence.digest;
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(errors!.some((e) => e.includes("digest")));
+  });
+
+  test("rejects evidence with non-sha256 digest prefix", () => {
+    const evidence = buildValidEvidence();
+    evidence.digest = "md5:abcdef";
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(errors!.some((e) => e.includes("sha256-prefixed")));
+  });
+
+  test("rejects evidence missing conformance object", () => {
+    const evidence = buildValidEvidence();
+    delete evidence.conformance;
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(errors!.some((e) => e.includes("conformance")));
+  });
+
+  test("rejects evidence with wrong result count", () => {
+    const evidence = buildValidEvidence();
+    evidence.conformance.results = evidence.conformance.results.slice(0, 10);
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(errors!.some((e) => e.includes("exactly 12")));
+  });
+
+  test("rejects evidence missing phase observations", () => {
+    const evidence = buildValidEvidence();
+    delete evidence.phase_observations;
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(errors!.some((e) => e.includes("phase_observations")));
+  });
+
+  test("rejects evidence with incomplete phase observations", () => {
+    const evidence = buildValidEvidence();
+    // Remove consolidate phase
+    evidence.phase_observations = evidence.phase_observations.filter(
+      (o: any) => o.phase !== "consolidate",
+    );
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(errors!.some((e) => e.includes("consolidate")));
+  });
+
+  test("rejects evidence missing pulse_identity", () => {
+    const evidence = buildValidEvidence();
+    delete evidence.pulse_identity;
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(errors!.some((e) => e.includes("pulse_identity")));
+  });
+
+  test("rejects evidence missing graphonomous_identity", () => {
+    const evidence = buildValidEvidence();
+    delete evidence.graphonomous_identity;
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(errors!.some((e) => e.includes("graphonomous_identity")));
+  });
+
+  test("rejects evidence where live_deployed result lacks provenance", () => {
+    const evidence = buildValidEvidence();
+    // Remove provenance from T02
+    delete evidence.conformance.results[1].observation.deployment_provenance;
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(errors!.some((e) => e.includes("T02") && e.includes("deployment_provenance")));
+  });
+
+  test("rejects evidence where live_deployed result has http endpoint", () => {
+    const evidence = buildValidEvidence();
+    evidence.conformance.results[1].observation.deployment_provenance = {
+      ...VALID_PROVENANCE,
+      endpoint_url: "http://graphonomous-mcp.fly.dev/mcp",
+    };
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(errors!.some((e) => e.includes("T02") && e.includes("not HTTPS")));
+  });
+
+  test("rejects evidence where live_deployed result has localhost endpoint", () => {
+    const evidence = buildValidEvidence();
+    evidence.conformance.results[1].observation.deployment_provenance = {
+      ...VALID_PROVENANCE,
+      endpoint_url: "https://localhost:3000/mcp",
+      configured_endpoint: "https://localhost:3000",
+    };
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(errors!.some((e) => e.includes("T02") && e.includes("localhost")));
+  });
+
+  test("rejects evidence where live_deployed result has unverified source", () => {
+    const evidence = buildValidEvidence();
+    evidence.conformance.results[1].observation.source = "unknown-system";
+    const errors = validateDeployedEvidence(evidence);
+    assert.ok(errors);
+    assert.ok(
+      errors!.some(
+        (e) => e.includes("T02") && e.includes("not a verified substrate"),
+      ),
+    );
+  });
+
+  test("accepts valid deployed evidence", () => {
+    const evidence = buildValidEvidence();
+    const errors = validateDeployedEvidence(evidence);
+    assert.equal(errors, null, "valid evidence should produce no errors");
   });
 });
