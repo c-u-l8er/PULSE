@@ -31,7 +31,7 @@
  * License: MIT (Ampersand Box Design)
  */
 
-const VERSION = "0.7.7";
+const VERSION = "0.8.1";
 
 // Canonical URLs per property. The "href" is the destination used in cross-property
 // links; the "label" is what visitors see in the dropdown.
@@ -40,6 +40,16 @@ const VERSION = "0.7.7";
 // tier = one of "shipped" | "alpha" | "spec") so the Compose menu can show
 // honest version/maturity at-a-glance. Source of truth: STACK_COMPLETION.md.
 const LINKS = {
+  // Code — the orchestration console for coding agents (repo: c-u-l8er/code).
+  // Leads Products: it is the surface a visitor actually drives the stack from.
+  code: {
+    label: "Code",
+    tagline: "Orchestration console for coding agents",
+    href: "https://code.traaviis.com",
+    status: "in dev",
+    tier: "alpha",
+  },
+
   // Cognitive Primitives — memory / knowledge / reasoning / time / space
   graphonomous: {
     label: "Graphonomous",
@@ -173,6 +183,31 @@ const LINKS = {
     label: "Invariant Arithmetic",
     tagline: "Rungs 1–2 (alethic · axiological)",
     href: "https://opensentience.org/invariant-arithmetic.html",
+  },
+  trvm: {
+    label: "TRVM",
+    tagline: "Coordination-free interaction-calculus runtime",
+    href: "https://trvm.traaviis.com",
+    status: "alpha",
+    tier: "alpha",
+  },
+
+  // The execution substrate chain: WRLM proposes → WRL seals → TRVM reduces →
+  // TRAAVIIS admits. TRVM itself is listed under Protocols (above); the other
+  // three surface here, in Research.
+  wrl: {
+    label: "WallRiderLang",
+    tagline: "An executable topology language whose meaning is a hash",
+    href: "https://wrl.traaviis.com",
+    status: "Core 0.1.2",
+    tier: "alpha",
+  },
+  wrlm: {
+    label: "WRLM",
+    tagline: "The generative cortex — a proposer over sealed worlds",
+    href: "https://github.com/c-u-l8er/TRVM/blob/main/WRLM_RESEARCH_BRIEF.md",
+    status: "steps 1–2",
+    tier: "alpha",
   },
 
   // The arithmetic ladder — box-and-box governance kernel (8 rungs, one bridge,
@@ -355,8 +390,38 @@ const LINKS = {
     tagline: "The graph-first doc protocol these pages run on",
     href: "https://docs.ampersandboxdesign.com/#/bendscript.com/docs/spec/README.md",
   },
+  d_wrl: {
+    label: "WallRiderLang — worlds",
+    tagline: "Seal a topology to a SemanticArtifactID",
+    href: "https://docs.ampersandboxdesign.com/#/wrl",
+  },
+  d_trvm: {
+    label: "TRVM — reduction",
+    tagline: "One spec, four packed-word implementations",
+    href: "https://docs.ampersandboxdesign.com/#/trvm",
+  },
+  d_wrlm: {
+    label: "WRLM — proposal",
+    tagline: "The only statistical layer in the chain",
+    href: "https://docs.ampersandboxdesign.com/#/wrlm",
+  },
+  d_traaviis: {
+    label: "TRAAVIIS — evidence",
+    tagline: "trvs: content-addressed evaluation environments",
+    href: "https://docs.ampersandboxdesign.com/#/traaviis",
+  },
+  d_code: {
+    label: "Code — the console",
+    tagline: "Lanes, budgets, gates — the orchestration harness",
+    href: "https://github.com/c-u-l8er/code",
+  },
 
   // Company
+  culler: {
+    label: "c-u-l8er.link",
+    tagline: "Cosmic Ultraviolet Lithographer — the creative studio",
+    href: "https://c-u-l8er.link",
+  },
   home: {
     label: "Ampersand Box Design",
     tagline: "The factory for evaluated cognitive systems",
@@ -364,9 +429,12 @@ const LINKS = {
   },
   traaviis: {
     label: "TRAAVIIS",
-    tagline: "The harness engineer — OS-008 terminal runtime",
+    tagline: "Evidence-grade environments for evaluating agents",
     href: "https://traaviis.com",
-    status: "v0.1.0",
+    // Not a test count. The suite collects 532 but has one open identity defect
+    // (kernel K27), so "532 tests" would read as 532 green. ORS v1 is the shipped,
+    // checkable fact: the Episode Kernel's first transport, profile O1–O30.
+    status: "trvs · ORS v1",
     tier: "alpha",
   },
   contact: {
@@ -381,6 +449,7 @@ const LINKS = {
 // (no highlight). Internal aliases ("ampersandboxdesign" → "home") are fine.
 const PROPERTY_MAP = {
   // Hero products — appear in the Products dropdown
+  code: { category: "products", item: "code" },
   graphonomous: { category: "products", item: "graphonomous" },
   bendscript: { category: "products", item: "bendscript" },
   runefort: { category: "products", item: "runefort" },
@@ -405,6 +474,9 @@ const PROPERTY_MAP = {
   pulse: { category: "protocols", item: "pulse" },
   prism: { category: "protocols", item: "prism" },
   scope: { category: "protocols", item: "scope" },
+  trvm: { category: "protocols", item: "trvm" },
+  wrl: { category: "research", item: "wrl" },
+  wrlm: { category: "research", item: "wrlm" },
   invariant_arithmetic: { category: "research", item: "invariant_arithmetic" },
   box_and_box: { category: "research", item: "box_and_box" },
   weave: { category: "research", item: "weave" },
@@ -426,7 +498,11 @@ const PROPERTY_MAP = {
   proof_monotonic: { category: "research", item: "proof_monotonic" },
   proof_deny: { category: "research", item: "proof_deny" },
   proof_append: { category: "research", item: "proof_append" },
+  // TRAAVIIS is listed twice (Company + the Research substrate column); the
+  // highlight resolves to Company, the same way graphonomous resolves to
+  // Products despite also appearing under Compose.
   traaviis: { category: "company", item: "traaviis" },
+  culler: { category: "company", item: "culler" },
   docs: { category: "docs", item: null },
 };
 
@@ -440,12 +516,12 @@ const CATEGORIES = [
   {
     id: "products",
     label: "Products",
-    items: ["graphonomous", "bendscript", "runefort"],
+    items: ["code", "graphonomous", "bendscript", "runefort"],
   },
   {
     id: "protocols",
     label: "Protocols",
-    items: ["ampersand", "pulse", "prism", "scope"],
+    items: ["ampersand", "pulse", "prism", "scope", "trvm"],
   },
   {
     id: "research",
@@ -471,6 +547,13 @@ const CATEGORIES = [
         // The kernel-level entry points: the package, its conformance, the sandbox.
         label: "The Arithmetic Ladder",
         items: ["box_and_box", "laws", "arith_playground"],
+      },
+      {
+        // The execution substrate, in the order a world moves through it:
+        // WRLM proposes → WRL seals → TRVM reduces → TRAAVIIS admits. WRLM is
+        // the only statistical layer; the other three are total + deterministic.
+        label: "The Execution Substrate",
+        items: ["wrl", "trvm", "wrlm", "traaviis"],
       },
       {
         // The eight rungs themselves, as individual living-paper pages
@@ -510,12 +593,16 @@ const CATEGORIES = [
         label: "Engines & capabilities",
         items: ["d_memory", "d_prism", "d_bendscript", "d_govern"],
       },
+      {
+        label: "Execution substrate",
+        items: ["d_wrl", "d_trvm", "d_wrlm", "d_traaviis", "d_code"],
+      },
     ],
   },
   {
     id: "company",
     label: "Company",
-    items: ["home", "traaviis", "contact"],
+    items: ["culler", "home", "traaviis", "contact"],
   },
   {
     id: "compose",
@@ -609,6 +696,7 @@ const STYLE = /* css */ `
   }
 
   .bar {
+    position: relative;
     height: var(--amp-nav-height);
     background: var(--amp-nav-bg);
     backdrop-filter: saturate(180%) blur(14px);
@@ -751,23 +839,42 @@ const STYLE = /* css */ `
     letter-spacing: 0;
   }
 
-  /* Mega dropdown — multi-column layout for the Compose catalog */
+  /* Mega dropdown — multi-column layout for the Compose catalog and Research.
+     Each menu is sized from its OWN column count (--cols, set inline at render)
+     rather than one shared min-width: Research carries five columns and Compose
+     three, and a single width would leave one of them either cramped or sparse.
+     auto-fit reflows to fewer, wider columns when the viewport can't fit them
+     all — the desktop nav still shows down to 861px, where five will not fit. */
+  .item[data-open="true"] .dropdown.mega {
+    display: grid;
+  }
+
   .dropdown.mega {
-    flex-direction: row;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    align-items: start;
     gap: 1.25rem;
     padding: 1rem;
-    /* Center under the Compose button so the wide menu stays on-screen */
+    /* Centered on the BAR, not on the trigger button. Centering a wide menu on
+       its own trigger pushes it off-screen whenever the trigger sits near an
+       edge — Research (leftish, 5 columns) fell off the left, Compose (last
+       button) off the right. The bar is the full viewport, so this is the one
+       anchor that keeps every mega menu on-screen at every width. */
     left: 50%;
     transform: translateX(-50%);
-    min-width: 760px;
+    width: min(calc(var(--cols, 3) * 220px + 2rem), calc(100vw - 2rem));
+  }
+
+  /* Mega triggers drop their positioning context so the menu resolves against
+     .bar. Flat dropdowns keep hanging off their own .item. */
+  .item:has(> .dropdown.mega) {
+    position: static;
   }
 
   .dropdown.mega .col {
-    flex: 1 1 240px;
-    min-width: 220px;
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
+    min-width: 0;
   }
 
   .dropdown.mega .col h4 {
@@ -1019,7 +1126,7 @@ const TEMPLATE = (property) => {
             <path d="M1.5 3.5 L5 7 L8.5 3.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
-        <div class="${dropdownClass}" role="menu">
+        <div class="${dropdownClass}" role="menu"${cat.mega ? ` style="--cols:${cat.columns.length}"` : ""}>
           ${dropdownInner}
         </div>
       </div>
