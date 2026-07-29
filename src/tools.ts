@@ -9,7 +9,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Handle } from "./db.js";
 import type { ManifestValidator } from "./schema.js";
-import { runConformance } from "./conformance.js";
+import { runConformance, validateDeployedEvidence } from "./conformance.js";
 import { buildCloudEvent, isValidToken } from "./tokens.js";
 
 export interface ToolContext {
@@ -58,20 +58,36 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
   // --- register_manifest ----------------------------------------------------
   server.tool(
     "register_manifest",
-    "Validate a PULSE manifest against the v0.1 schema, run the 12-test conformance suite, and persist it to the registry.",
-    { manifest: ManifestShape },
-    async ({ manifest }) => {
+    "Validate a PULSE manifest against the v0.1 schema, run the 12-test conformance suite, and persist it to the registry. Optionally accepts deployed_evidence containing the full evidence-bearing deployed conformance report.",
+    {
+      manifest: ManifestShape,
+      deployed_evidence: z.record(z.any()).optional(),
+    },
+    async ({ manifest, deployed_evidence }) => {
       const result = ctx.validator.check(manifest);
       if (!result.valid) {
         return err("schema validation failed", { errors: result.errors });
       }
       const report = runConformance(manifest, result);
 
+      // Validate deployed evidence if provided
+      let deployedEvidenceJson: string | null = null;
+      if (deployed_evidence) {
+        const evidenceErrors = validateDeployedEvidence(deployed_evidence);
+        if (evidenceErrors !== null) {
+          return err("deployed evidence validation failed", {
+            errors: evidenceErrors,
+          });
+        }
+        deployedEvidenceJson = JSON.stringify(deployed_evidence);
+      }
+
       const stmt = ctx.db.prepare(`
         INSERT OR REPLACE INTO manifests
           (loop_id, version, pulse_protocol_version, owner, workspace_scope,
-           manifest_json, parent_loop_id, registered_at, conformance_status, conformance_report)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           manifest_json, parent_loop_id, registered_at, conformance_status,
+           conformance_report, deployed_evidence)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const m = manifest as any;
@@ -86,6 +102,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
         Math.floor(Date.now() / 1000),
         report.overall,
         JSON.stringify(report),
+        deployedEvidenceJson,
       );
 
       // Insert any declared connections.
@@ -119,6 +136,7 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
         loop_id: m.loop_id,
         version: m.version,
         conformance: report,
+        deployed_evidence: deployed_evidence ? { stored: true } : undefined,
       });
     },
   );
@@ -182,20 +200,29 @@ export function registerTools(server: McpServer, ctx: ToolContext): void {
       const row = version
         ? ctx.db
             .prepare(
-              "SELECT manifest_json, conformance_report FROM manifests WHERE loop_id = ? AND version = ?",
+              "SELECT manifest_json, conformance_report, deployed_evidence FROM manifests WHERE loop_id = ? AND version = ?",
             )
             .get(loop_id, version)
         : ctx.db
             .prepare(
-              `SELECT manifest_json, conformance_report FROM manifests
+              `SELECT manifest_json, conformance_report, deployed_evidence FROM manifests
                WHERE loop_id = ? ORDER BY registered_at DESC LIMIT 1`,
             )
             .get(loop_id);
       if (!row) return err("loop not found", { loop_id, version });
-      const r = row as { manifest_json: string; conformance_report: string | null };
+      const r = row as {
+        manifest_json: string;
+        conformance_report: string | null;
+        deployed_evidence: string | null;
+      };
       return ok({
         manifest: JSON.parse(r.manifest_json),
-        conformance: r.conformance_report ? JSON.parse(r.conformance_report) : null,
+        conformance: r.conformance_report
+          ? JSON.parse(r.conformance_report)
+          : null,
+        deployed_evidence: r.deployed_evidence
+          ? JSON.parse(r.deployed_evidence)
+          : null,
       });
     },
   );

@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS manifests (
   registered_at          INTEGER NOT NULL,
   conformance_status     TEXT,
   conformance_report     TEXT,
+  deployed_evidence      TEXT,
   PRIMARY KEY (loop_id, version)
 );
 

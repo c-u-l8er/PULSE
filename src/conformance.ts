@@ -664,6 +664,115 @@ function t12VersionMonotonicity(manifest: Manifest): TestResult {
 }
 
 // ---------------------------------------------------------------------------
+// Deployed evidence validation for persistence
+// ---------------------------------------------------------------------------
+
+/** Canonical PULSE phases that must appear in deployed evidence. */
+const CANONICAL_PHASES = new Set([
+  "retrieve",
+  "route",
+  "act",
+  "learn",
+  "consolidate",
+]);
+
+/**
+ * Validate a deployed evidence blob before it is persisted.
+ *
+ * Returns `null` when valid, or an array of specific disqualification strings.
+ * Every check is explicit so tests can target individual failure modes.
+ */
+export function validateDeployedEvidence(
+  evidence: Record<string, any>,
+): string[] | null {
+  const errors: string[] = [];
+
+  // 1. Required top-level fields
+  if (!evidence.report_id || typeof evidence.report_id !== "string") {
+    errors.push("missing or invalid report_id");
+  }
+  if (!evidence.digest || typeof evidence.digest !== "string") {
+    errors.push("missing or invalid digest");
+  }
+  if (!evidence.conformance || typeof evidence.conformance !== "object") {
+    errors.push("missing or invalid conformance object");
+    return errors; // Can't check further without conformance
+  }
+
+  // 2. Exactly 12 conformance results
+  const results: any[] = evidence.conformance?.results;
+  if (!Array.isArray(results) || results.length !== 12) {
+    errors.push(
+      `conformance.results must have exactly 12 entries, got ${Array.isArray(results) ? results.length : "none"}`,
+    );
+  }
+
+  // 3. Phase observations: all 5 canonical phases present
+  const phaseObs: any[] = evidence.phase_observations;
+  if (!Array.isArray(phaseObs)) {
+    errors.push("missing phase_observations array");
+  } else {
+    const observedPhases = new Set(phaseObs.map((o: any) => o.phase));
+    for (const phase of CANONICAL_PHASES) {
+      if (!observedPhases.has(phase)) {
+        errors.push(`missing phase observation for canonical phase: ${phase}`);
+      }
+    }
+  }
+
+  // 4. Machine identities must be present
+  if (
+    !evidence.pulse_identity ||
+    typeof evidence.pulse_identity !== "object" ||
+    !evidence.pulse_identity.name
+  ) {
+    errors.push("missing or invalid pulse_identity");
+  }
+  if (
+    !evidence.graphonomous_identity ||
+    typeof evidence.graphonomous_identity !== "object" ||
+    !evidence.graphonomous_identity.name
+  ) {
+    errors.push("missing or invalid graphonomous_identity");
+  }
+
+  // 5. Every live_deployed result must have valid deployment provenance
+  if (Array.isArray(results)) {
+    for (const r of results) {
+      if (r.evidence_rung === "live_deployed") {
+        if (!r.observation?.deployment_provenance) {
+          errors.push(
+            `${r.id} claims live_deployed but has no deployment_provenance`,
+          );
+        } else {
+          const provError = validateDeploymentProvenance(
+            r.observation.deployment_provenance,
+          );
+          if (provError !== null) {
+            errors.push(`${r.id} has invalid deployment_provenance: ${provError}`);
+          }
+        }
+        // Source must be a verified substrate
+        if (r.observation && !VERIFIED_SUBSTRATES.has(r.observation.source)) {
+          errors.push(
+            `${r.id} claims live_deployed but source '${r.observation?.source}' is not a verified substrate`,
+          );
+        }
+      }
+    }
+  }
+
+  // 6. Digest must be sha256-prefixed
+  if (evidence.digest && !evidence.digest.startsWith("sha256:")) {
+    errors.push(
+      `digest must be sha256-prefixed, got: ${evidence.digest.slice(0, 30)}`,
+    );
+  }
+
+  return errors.length > 0 ? errors : null;
+}
+
+// ---------------------------------------------------------------------------
 // Coverage matrix — property-by-property successful + adverse observations
 // ---------------------------------------------------------------------------
 
