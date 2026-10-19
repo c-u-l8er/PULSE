@@ -8,7 +8,7 @@
   "owner": "ampersandboxdesign.com",
   "workspace_scope": "required",
 
-  "description": "Per-interaction embodiment loop for OS-011 &body.browser: perceive the DOM/a11y state, enumerate policy-filtered affordances, execute one typed action, record the resulting TraceEdge, emit SurpriseSignal on forward-model prediction error. Each pass through the loop produces exactly one TraceEdge that feeds into &memory.episodic.store for procedural clustering and cross-machine replay.",
+  "description": "Per-interaction embodiment loop for GRASP &body.browser: perceive the DOM/a11y state, enumerate policy-filtered affordances, execute one typed action, record the resulting TraceEdge, emit SurpriseSignal on forward-model prediction error. Each pass through the loop produces exactly one TraceEdge that feeds into &memory.episodic.store for procedural clustering and cross-machine replay.",
 
   "phases": [
     {
@@ -35,7 +35,7 @@
     {
       "id": "act",
       "kind": "act",
-      "description": "Execute exactly one TypedAction. Invariants: I1 perceive-before-act (stale refs rejected), I2 affordance-bounded (action must appear in the AffordanceSet), destructive actions require a fresh authorization block per OS-011 §4.4.",
+      "description": "Execute exactly one TypedAction. Invariants: I1 perceive-before-act (stale refs rejected), I2 affordance-bounded (action must appear in the AffordanceSet), destructive actions require a fresh authorization block per GRASP §4.4.",
       "inputs":  { "from": "phase:affordances", "schema": "TypedAction" },
       "outputs": { "to": "phase:learn", "schema": "ActionOutcome" },
       "idempotent": false,
@@ -107,7 +107,7 @@
       "name": "body-browser (Simulator backend)",
       "path": "body-browser/",
       "status": "conforming",
-      "conformance": "OS-011 v0.1 §9 — 12/12 tests pass against BodyBrowser.Backend.Simulator"
+      "conformance": "GRASP v0.1 §9 — 12/12 tests pass against BodyBrowser.Backend.Simulator"
     },
     {
       "name": "body-browser (AgentBrowser backend)",

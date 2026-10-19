@@ -8,7 +8,7 @@
   "owner": "ampersandboxdesign.com",
   "workspace_scope": "required",
 
-  "description": "Per-interaction embodiment loop for OS-011 &body.os: perceive the host state (cwd, env, fs snapshot, process list), enumerate policy-filtered affordances, execute one typed action (shell_exec, file_write, file_delete, process_spawn, process_signal, etc.) with destructive-edge authorization, record the resulting TraceEdge, emit SurpriseSignal on forward-model prediction error. Every destructive edge MUST carry a fresh authorization block at both record and replay time (OS-011 §4.4).",
+  "description": "Per-interaction embodiment loop for GRASP &body.os: perceive the host state (cwd, env, fs snapshot, process list), enumerate policy-filtered affordances, execute one typed action (shell_exec, file_write, file_delete, process_spawn, process_signal, etc.) with destructive-edge authorization, record the resulting TraceEdge, emit SurpriseSignal on forward-model prediction error. Every destructive edge MUST carry a fresh authorization block at both record and replay time (GRASP §4.4).",
 
   "phases": [
     {
@@ -35,7 +35,7 @@
     {
       "id": "act",
       "kind": "act",
-      "description": "Execute exactly one TypedAction. Invariants: I1 perceive-before-act, I2 affordance-bounded, I4 deterministic state encoding. Destructive actions (shell_exec, file_write, file_edit, file_delete, keyboard_input, mouse_click, mouse_drag, process_spawn, process_signal) require a fresh authorization block per OS-011 §4.4.",
+      "description": "Execute exactly one TypedAction. Invariants: I1 perceive-before-act, I2 affordance-bounded, I4 deterministic state encoding. Destructive actions (shell_exec, file_write, file_edit, file_delete, keyboard_input, mouse_click, mouse_drag, process_spawn, process_signal) require a fresh authorization block per GRASP §4.4.",
       "inputs":  { "from": "phase:affordances", "schema": "TypedAction" },
       "outputs": { "to": "phase:learn", "schema": "ActionOutcome" },
       "idempotent": false,
@@ -80,7 +80,7 @@
     {
       "name": "delegatic",
       "kind": "authorization",
-      "note": "Issues fresh authorization blocks for destructive edges. Required for every replay of a destructive action — OS-011 §4.4 prohibits prior-authorization carry."
+      "note": "Issues fresh authorization blocks for destructive edges. Required for every replay of a destructive action — GRASP §4.4 prohibits prior-authorization carry."
     }
   ],
 
@@ -100,7 +100,7 @@
       "name": "body-os (Simulator backend)",
       "path": "body-os/",
       "status": "conforming",
-      "conformance": "OS-011 v0.1 §9 — 12/12 tests pass against BodyOs.Backend.Simulator"
+      "conformance": "GRASP v0.1 §9 — 12/12 tests pass against BodyOs.Backend.Simulator"
     },
     {
       "name": "body-os (ComputerUse backend)",

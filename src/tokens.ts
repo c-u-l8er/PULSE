@@ -1,7 +1,7 @@
 /**
  * The six canonical PULSE cross-loop tokens and helpers for wrapping them
- * in CloudEvents v1.0 envelopes. SurpriseSignal added in PULSE v0.1.1 for OS-011
- * (Embodiment Protocol) forward-model-prediction-error emission.
+ * in CloudEvents v1.0 envelopes. SurpriseSignal added in PULSE v0.1.1 for GRASP
+ * forward-model-prediction-error emission.
  */
 import { CloudEvent } from "cloudevents";
 import crypto from "node:crypto";
@@ -87,7 +87,7 @@ export interface ConsolidationEventData {
 }
 
 /**
- * SurpriseSignal — OS-011 Embodiment Protocol v0.1
+ * SurpriseSignal — GRASP v0.1
  *
  * Emitted by a `&body.*` provider when an actual environment observation after
  * `act()` diverges materially from the forward model's prediction. Consumed by
